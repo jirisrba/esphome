@@ -53,16 +53,3 @@ sensor:
       name: "${esphome_name} Humidity"
     address: 0x76
     update_interval: 60s
-
-time:
-  - platform: homeassistant
-    id: homeassistant_time
-    timezone: Europe/Prague
-    on_time:
-      # ON Every morning 6:30 on weekdays
-      - seconds: 0
-        minutes: 30
-        hours: 6
-        days_of_week: MON-FRI
-        then:
-          - switch.turn_on: relay

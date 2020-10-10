@@ -46,19 +46,6 @@ time:
 #dallas:
 #  - pin: GPIO3
 #
-#sensor:
-#  - platform: hlw8012
-#    sel_pin: 5
-#    cf_pin: 14
-#    cf1_pin: 13
-#    current:
-#      name: "${esphome_name} current"
-#    voltage:
-#      name: "${esphome_name} voltage"
-#    power:
-#      name: "${esphome_name} power"
-#    update_interval: 60s
-#
 #  # temp sensor
 #  - platform: dallas
 #    address: 0xA40000055D2B4128
