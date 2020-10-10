@@ -1,0 +1,66 @@
+---
+substitutions:
+  esphome_name: sonoff_pow_christmas
+
+esphome:
+  name: ${esphome_name}
+  platform: ESP8266
+  board: esp01_1m
+
+<<: !include common.yaml
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    id: button
+    on_press:
+      - switch.toggle: relay
+
+switch:
+  - platform: gpio
+    name: dortik
+    pin: GPIO12
+    id: relay
+
+sun:
+  latitude: 50.1576534
+  longitude: 14.5168246
+
+  on_sunrise:
+    - then:
+      - switch.turn_on: relay
+
+  on_sunset:
+    - then:
+      - switch.turn_off: relay
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    timezone: Europe/Prague
+
+# temp sensor: Rx pin GPIO3
+#dallas:
+#  - pin: GPIO3
+#
+#sensor:
+#  - platform: hlw8012
+#    sel_pin: 5
+#    cf_pin: 14
+#    cf1_pin: 13
+#    current:
+#      name: "${esphome_name} current"
+#    voltage:
+#      name: "${esphome_name} voltage"
+#    power:
+#      name: "${esphome_name} power"
+#    update_interval: 60s
+#
+#  # temp sensor
+#  - platform: dallas
+#    address: 0xA40000055D2B4128
+#    name: "${esphome_name} temperature"
+#

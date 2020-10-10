@@ -1,0 +1,56 @@
+---
+substitutions:
+  esphome_name: tuya_dimmer
+
+esphome:
+  name: ${esphome_name}
+  platform: ESP8266
+  board: esp01_1m
+
+<<: !include common.yaml
+
+# web_server:
+#   port: 80
+
+# Make sure logging is not using the serial port
+logger:
+  baud_rate: 0
+
+# UART dimmer
+uart:
+  rx_pin: GPIO3
+  tx_pin: GPIO1
+  baud_rate: 9600
+
+# Register the Tuya MCU connection
+tuya:
+
+# Create a light using the dimmer
+light:
+  - platform: "tuya"
+    name: "zelva-teplo"
+    id: ${esphome_name}
+    dimmer_datapoint: 2
+    switch_datapoint: 1
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    timezone: Europe/Prague
+    on_time:
+      # zelva light ON
+      - seconds: 00
+        minutes: 00
+        hours: 08
+        days_of_week: MON-SUN
+        then:
+          - light.turn_on:
+              id: ${esphome_name}
+              brightness: 100%
+      # zelva light OFF
+      - seconds: 00
+        minutes: 00
+        hours: 16
+        days_of_week: MON-SUN
+        then:
+          - light.turn_off: ${esphome_name}

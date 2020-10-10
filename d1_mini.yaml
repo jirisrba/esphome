@@ -1,0 +1,103 @@
+---
+substitutions:
+  esphome_name: d1_mini
+
+esphome:
+  name: ${esphome_name}
+  platform: ESP8266
+  board: d1_mini
+  includes:
+    - veml6075_custom_sensor.h
+  libraries:
+    - "https://github.com/adafruit/Adafruit_VEML6075"
+    #- "https://github.com/sparkfun/SparkFun_VEML6075_Arduino_Library"
+
+<<: !include common.yaml
+
+# web_server:
+#  port: 80
+
+i2c:
+  - sda: D2
+    scl: D1
+    scan: True
+
+dallas:
+  - pin: D4  # D4 GPIO2
+
+# Individual sensors
+sensor:
+  - platform: dallas
+    address: 0x4E03159779154E28
+    id: zelva_left
+    name: "zelva left temperature"
+    accuracy_decimals: 2
+  - platform: dallas
+    address: 0x4A0307977998FD28
+    id: zelva_right
+    name: "zelva right temperature"
+    accuracy_decimals: 2
+  - platform: dht
+    pin: D3
+    model: DHT11
+    humidity:
+      name: "zelva humidity"
+      id: zelva_humidity
+    update_interval: 60s
+
+  - platform: custom
+    lambda: |-
+      auto veml6075 = new VEML6075CustomSensor();
+      App.register_component(veml6075);
+      return {veml6075->uva_sensor, veml6075->uvb_sensor};
+    sensors:
+    - name: "zelva UVA"
+      id: zelva_uva
+      unit_of_measurement: "mW/cm²"
+      accuracy_decimals: 0
+    - name: "zelva UVB"
+      id: zelva_uvb
+      unit_of_measurement: "mW/cm²"
+      accuracy_decimals: 0
+
+font:
+  - file: "FiraCode-Regular.ttf"
+    id: my_font
+    size: 18
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x64"
+    address: 0x3C
+    lambda: |-
+      it.printf(0, 25, id(my_font), "%.1f", id(zelva_left).state);
+      it.printf(80, 25, id(my_font), "%.1f", id(zelva_right).state);
+      it.printf(0, 50, id(my_font), "%.0f%%", id(zelva_humidity).state);
+      it.printf(40, 50, id(my_font), "%.0f", id(zelva_uva).state);
+      it.printf(80, 50, id(my_font), "%.0f", id(zelva_uvb).state);
+
+
+#sensor:
+#  - platform: bme280
+#    temperature:
+#      name: "BME Teplota"
+#      oversampling: 16x
+#      id: bme_temp
+#    pressure:
+#      name: "BME Tlak"
+#      id: bme_press
+#    humidity:
+#      name: "BME Vlhkost"
+#      id: bme_humid
+#    address: 0x76
+#    update_interval: 60s
+#
+#  - platform: sht3xd
+#    temperature:
+#      id: zelva_left
+#      name: "SHT31 Teplota"
+#    humidity:
+#      id: sht31_humid
+#      name: "SHT31 Vlhkost"
+#    address: 0x44
+#    update_interval: 60s

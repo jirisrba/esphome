@@ -1,0 +1,47 @@
+---
+substitutions:
+  esphome_name: kitchen_light
+
+esphome:
+  name: ${esphome_name}
+  platform: ESP8266
+  board: esp01_1m
+
+<<: !include common.yaml
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    id: button1
+    on_press:
+      - light.toggle: bed_light
+  - platform: gpio
+    pin:
+      number: GPIO9
+      mode: INPUT_PULLUP
+      inverted: True
+    id: button2
+    on_press:
+      - light.toggle: kitchen_light
+
+# convert switch to light
+output:
+  - platform: gpio
+    id: relay1
+    pin: GPIO12
+  - platform: gpio
+    id: relay2
+    pin: GPIO5
+
+light:
+  - platform: binary
+    id: bed_light
+    name: bed_light
+    output: relay1
+  - platform: binary
+    id: kitchen_light
+    name: kitchen_light
+    output: relay2

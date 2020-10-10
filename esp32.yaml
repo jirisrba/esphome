@@ -1,0 +1,41 @@
+---
+substitutions:
+  esphome_name: esp32
+
+esphome:
+  name: ${esphome_name}
+  platform: ESP32
+  board: nodemcu-32s
+
+<<: !include common.yaml
+
+web_server:
+  port: 80
+
+i2c:
+  sda: 21
+  scl: 22
+  scan: True
+
+sensor:
+  - platform: sht3xd
+    temperature:
+      id: sht31_temp
+      name: "${esphome_name} SHT31 teplota"
+    humidity:
+      id: sht31_humid
+      name: "${esphome_name} SHT31 vlhkost"
+    address: 0x44
+    update_interval: 60s
+
+font:
+  - file: "FiraCode-Regular.ttf"
+    id: my_font
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x64"
+    address: 0x3C
+    lambda: |-
+      it.printf(0, 20, id(my_font), "%.1fC", id(sht31_temp).state);
+      it.printf(0, 50, id(my_font), "%.1f%%", id(sht31_humid).state);

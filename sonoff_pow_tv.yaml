@@ -1,0 +1,68 @@
+---
+substitutions:
+  esphome_name: sonoff_pow_tv
+
+esphome:
+  name: ${esphome_name}
+  platform: ESP8266
+  board: esp01_1m
+
+<<: !include common.yaml
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    id: button
+    on_press:
+      - switch.toggle: relay
+
+switch:
+  - platform: gpio
+    name: kids_tv
+    pin: GPIO12
+    id: relay
+
+i2c:
+  sda: GPIO3
+  scl: GPIO1
+  scan: True
+
+sensor:
+  - platform: hlw8012
+    sel_pin: 5
+    cf_pin: 14
+    cf1_pin: 13
+    current:
+      name: "${esphome_name} current"
+    voltage:
+      name: "${esphome_name} voltage"
+    power:
+      name: "${esphome_name} power"
+    update_interval: 60s
+
+  - platform: bme280
+    temperature:
+      name: "${esphome_name} Temperature"
+      oversampling: 16x
+    pressure:
+      name: "${esphome_name} Pressure"
+    humidity:
+      name: "${esphome_name} Humidity"
+    address: 0x76
+    update_interval: 60s
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    timezone: Europe/Prague
+    on_time:
+      # ON Every morning 6:30 on weekdays
+      - seconds: 0
+        minutes: 30
+        hours: 6
+        days_of_week: MON-FRI
+        then:
+          - switch.turn_on: relay

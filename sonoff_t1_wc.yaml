@@ -1,0 +1,55 @@
+---
+substitutions:
+  esphome_name: sonoff_t1_wc
+
+esphome:
+  name: ${esphome_name}
+  platform: ESP8266
+  board: esp01_1m
+
+<<: !include common.yaml
+
+switch:
+  - platform: gpio
+    name: wc_light
+    pin: GPIO12
+    id: relay1
+    # zapni i vetracek a pak vse zase vypni
+    on_turn_on:
+      if:
+        condition:
+          switch.is_on: relay1
+        then:
+        - delay: 60s
+        - switch.turn_on: relay2
+        - delay: 300s
+        - switch.turn_off: relay1
+        - switch.turn_off: relay2
+
+  - platform: gpio
+    name: wc_fan
+    pin: GPIO5
+    id: relay2
+    # automaticky vypni vetracek po 5-ti min
+    on_turn_on:
+      - delay: 300s
+      - switch.turn_off: relay2
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    id: button1
+    on_press:
+      - switch.toggle: relay1
+
+  - platform: gpio
+    pin:
+      number: GPIO9
+      mode: INPUT_PULLUP
+      inverted: True
+    id: button2
+    on_press:
+        - switch.toggle: relay2

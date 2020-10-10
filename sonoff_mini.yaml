@@ -1,0 +1,28 @@
+---
+substitutions:
+  esphome_name: sonoff_mini
+
+esphome:
+  name: ${esphome_name}
+  platform: ESP8266
+  board: esp01_1m
+
+<<: !include common.yaml
+
+switch:
+  - platform: gpio
+    name: hall_light
+    pin: GPIO12
+    id: relay
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO04
+      mode: INPUT_PULLUP
+      inverted: True
+    id: mini_switch_1
+    # schodistak, nastaveno na zmenu stavu
+    on_state:
+      then:
+        - switch.toggle: relay

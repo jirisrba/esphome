@@ -1,0 +1,31 @@
+---
+substitutions:
+  esphome_name: kids_light
+
+esphome:
+  name: ${esphome_name}
+  platform: ESP8266
+  board: esp01_1m
+
+<<: !include common.yaml
+
+binary_sensor:
+  - platform: gpio
+    id: button
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    on_press:
+      - light.toggle: ${esphome_name}
+
+output:
+  - platform: gpio
+    id: light_relay
+    pin: GPIO12
+
+light:
+  - platform: binary
+    id: ${esphome_name}
+    name: ${esphome_name}
+    output: light_relay

@@ -1,0 +1,81 @@
+---
+substitutions:
+  esphome_name: sonoff_t2_uk
+
+esphome:
+  name: ${esphome_name}
+  platform: ESP8266
+  board: esp01_1m
+
+<<: !include common.yaml
+
+switch:
+  - platform: gpio
+    name: emmet
+    pin: GPIO12
+    id: relay1
+
+  - platform: gpio
+    # name: zelva-light
+    pin: GPIO5
+    id: relay2
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    id: button1
+    on_press:
+      - switch.toggle: relay1
+
+  - platform: gpio
+    pin:
+      number: GPIO9
+      mode: INPUT_PULLUP
+      inverted: True
+    id: button2
+    on_press:
+        - switch.toggle: relay2
+
+sun:
+  latitude: 50.1576534
+  longitude: 14.5168246
+
+  on_sunrise:
+    - then:
+      - switch.turn_on: relay1
+
+  on_sunset:
+    - then:
+      - switch.turn_off: relay1
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    timezone: Europe/Prague
+#    on_time:
+#      # zelva ON
+#      - seconds: 00
+#        minutes: 00
+#        hours: 10
+#        days_of_week: MON-SUN
+#        then:
+#          - switch.turn_on: relay1
+#          - switch.turn_on: relay2
+#      # zelva UVB OFF
+#      - seconds: 00
+#        minutes: 00
+#        hours: 19
+#        days_of_week: MON-SUN
+#        then:
+#          - switch.turn_off: relay1
+#      # zelva light OFF - not used
+#      - seconds: 00
+#        minutes: 00
+#        hours: 18
+#        days_of_week: MON-SUN
+#        then:
+#          - switch.turn_off: relay2
+#

@@ -1,0 +1,46 @@
+---
+substitutions:
+  esphome_name: kids_tv
+
+esphome:
+  name: ${esphome_name}
+  platform: ESP8266
+  board: esp01_1m
+
+<<: !include common.yaml
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    id: button
+    on_press:
+      - switch.toggle: relay
+
+switch:
+  - platform: gpio
+    name: kids_tv
+    pin: GPIO12
+    id: relay
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    timezone: Europe/Prague
+    on_time:
+      # ON Every morning 6:30 on weekdays
+      - seconds: 0
+        minutes: 30
+        hours: 6
+        days_of_week: MON-FRI
+        then:
+          - switch.turn_on: relay
+      # OFF Every morning 7:45 on weekdays
+      - seconds: 0
+        minutes: 45
+        hours: 7
+        days_of_week: MON-FRI
+        then:
+          - switch.turn_off: relay

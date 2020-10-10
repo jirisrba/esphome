@@ -1,0 +1,36 @@
+---
+substitutions:
+  esphome_name: sonoff_basic
+
+esphome:
+  name: ${esphome_name}
+  platform: ESP8266
+  board: esp01_1m
+
+<<: !include common.yaml
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    id: button
+    on_press:
+      - switch.toggle: relay
+
+switch:
+  - platform: gpio
+    name: basic_switch
+    id: relay
+    pin: GPIO12
+
+# Example configuration entry
+dallas:
+  - pin: GPIO3
+
+# Individual sensors
+sensor:
+  - platform: dallas
+    address: 0xA40000055D2B4128
+    name: "basic temperature"
