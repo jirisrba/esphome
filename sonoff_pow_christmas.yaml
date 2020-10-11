@@ -1,4 +1,3 @@
----
 substitutions:
   esphome_name: sonoff_pow_christmas
 
@@ -24,23 +23,6 @@ switch:
     name: dortik
     pin: GPIO12
     id: relay
-
-sun:
-  latitude: 50.1576534
-  longitude: 14.5168246
-
-  on_sunrise:
-    - then:
-      - switch.turn_on: relay
-
-  on_sunset:
-    - then:
-      - switch.turn_off: relay
-
-time:
-  - platform: homeassistant
-    id: homeassistant_time
-    timezone: Europe/Prague
 
 # temp sensor: Rx pin GPIO3
 #dallas:

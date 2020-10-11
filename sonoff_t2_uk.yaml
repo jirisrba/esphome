@@ -38,15 +38,3 @@ binary_sensor:
     id: button2
     on_press:
         - switch.toggle: relay2
-
-sun:
-  latitude: 50.1576534
-  longitude: 14.5168246
-
-  on_sunrise:
-    - then:
-      - switch.turn_on: relay1
-
-  on_sunset:
-    - then:
-      - switch.turn_off: relay1
