@@ -1,0 +1,25 @@
+substitutions:
+  esphome_name: sonoff_basic2
+
+esphome:
+  name: ${esphome_name}
+  platform: ESP8266
+  board: esp8285
+
+<<: !include common.yaml
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    id: button
+    on_press:
+      - switch.toggle: relay
+
+switch:
+  - platform: gpio
+    name: basic_switch
+    id: relay
+    pin: GPIO12

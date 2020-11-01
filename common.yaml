@@ -4,7 +4,7 @@
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_pass
-  # change hostname from use_address
+  # change hostname = set use_address
   # use_address: 192.168.2.253
 
 captive_portal:
@@ -16,12 +16,6 @@ status_led:
   pin:
     number: GPIO13
     inverted: yes
-
-# not-used, removed
-#sensor:
-#  - platform: wifi_signal
-#    name: ${esphome_name}_wifi_signal
-#    update_interval: 1200s
 
 text_sensor:
   - platform: version
