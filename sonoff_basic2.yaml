@@ -20,6 +20,6 @@ binary_sensor:
 
 switch:
   - platform: gpio
-    name: basic_switch
+    name: christmas_balkon
     id: relay
     pin: GPIO12

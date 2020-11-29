@@ -11,12 +11,12 @@ esphome:
 
 switch:
   - platform: gpio
-    name: emmet
+    # name: light2
     pin: GPIO12
     id: relay1
 
   - platform: gpio
-    # name: zelva-light
+    # name: light2
     pin: GPIO5
     id: relay2
 

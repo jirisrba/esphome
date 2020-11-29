@@ -1,4 +1,3 @@
----
 substitutions:
   esphome_name: sonoff_pow_tv
 
@@ -21,35 +20,6 @@ binary_sensor:
 
 switch:
   - platform: gpio
-    name: kids_tv
+    name: emmet
     pin: GPIO12
     id: relay
-
-i2c:
-  sda: GPIO3
-  scl: GPIO1
-  scan: True
-
-sensor:
-  - platform: hlw8012
-    sel_pin: 5
-    cf_pin: 14
-    cf1_pin: 13
-    current:
-      name: "${esphome_name} current"
-    voltage:
-      name: "${esphome_name} voltage"
-    power:
-      name: "${esphome_name} power"
-    update_interval: 60s
-
-  - platform: bme280
-    temperature:
-      name: "${esphome_name} Temperature"
-      oversampling: 16x
-    pressure:
-      name: "${esphome_name} Pressure"
-    humidity:
-      name: "${esphome_name} Humidity"
-    address: 0x76
-    update_interval: 60s
