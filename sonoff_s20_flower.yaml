@@ -25,22 +25,23 @@ switch:
     pin: GPIO12
     id: relay
 
+sun:
+  latitude: !secret latitude
+  longitude: !secret longitude
+  # switch ON
+  on_sunset:
+  - then:
+    - switch.turn_on: relay
+
 time:
   - platform: homeassistant
     id: homeassistant_time
     timezone: Europe/Prague
     on_time:
-      # ON Every morning
-      - seconds: 00
-        minutes: 30
-        hours: 7
-        days_of_week: MON-SUN
-        then:
-          - switch.turn_on: relay
       # OFF Every evening
       - seconds: 00
         minutes: 00
-        hours: 19
+        hours: 22
         days_of_week: MON-SUN
         then:
           - switch.turn_off: relay
