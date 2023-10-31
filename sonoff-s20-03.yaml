@@ -1,6 +1,6 @@
 ---
 substitutions:
-  esphome_name: kids_tv
+  esphome_name: sonoff-s20-03
 
 esphome:
   name: ${esphome_name}
@@ -21,26 +21,29 @@ binary_sensor:
 
 switch:
   - platform: gpio
-    name: kids_tv
+    name: ${esphome_name}
     pin: GPIO12
     id: relay
 
+# switch ON
+sun:
+  latitude: !secret latitude
+  longitude: !secret longitude
+  # switch ON
+  on_sunset:
+  - then:
+    - switch.turn_on: relay
+
+# switch OFF
 time:
-  - platform: homeassistant
-    id: homeassistant_time
+  - platform: sntp
+    id: sntp_time
     timezone: Europe/Prague
     on_time:
-      # ON Every morning 6:30 on weekdays
-      - seconds: 0
-        minutes: 30
-        hours: 6
-        days_of_week: MON-FRI
-        then:
-          - switch.turn_on: relay
-      # OFF Every morning 7:45 on weekdays
-      - seconds: 0
-        minutes: 45
-        hours: 7
-        days_of_week: MON-FRI
+      # OFF Every evening
+      - seconds: 00
+        minutes: 00
+        hours: 08
+        days_of_week: MON-SUN
         then:
           - switch.turn_off: relay

@@ -1,12 +1,27 @@
----
 # common settings
 
-wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_pass
-  # change hostname = set use_address
-  # use_address: 192.168.2.253
+# change hostname => set use_address
+# wifi:
+#   #   ssid: !secret wifi_ssid
+#   #   password: !secret wifi_pass
+#   ssid: !secret wifi_ssid_ufo
+#   password: !secret wifi_pass_ufo
+#   #   # use_address: 192.168.2.253
+#   use_address: sonoff_s20_flower.local
 
+wifi:
+  networks:
+    - ssid: !secret wifi_ssid
+      password: !secret wifi_pass
+    - ssid: !secret wifi_ssid_ufo
+      password: !secret wifi_pass_ufo
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${esphome_name}"
+    password: "abcd1234"
+
+# fallback mechanism for when connecting to the configured WiFi fails
 captive_portal:
 
 # web_server:
@@ -23,9 +38,15 @@ text_sensor:
 
 # Enable logging
 logger:
+#  level: VERY_VERBOSE
 
 # Enable Home Assistant API
-api:
+#api:
+#   reboot_timeout: 15min
+#  reboot_timeout: 0s
+
+# mqtt:
+#   broker: router.local
 
 # Make sure you can upload new firmware OTA
 ota:
@@ -35,3 +56,5 @@ time:
   - platform: homeassistant
     id: homeassistant_time
     timezone: Europe/Prague
+  # - platform: sntp
+  #   id: sntp_time
