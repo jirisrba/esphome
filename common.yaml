@@ -45,8 +45,8 @@ logger:
 
 # Enable Home Assistant API
 api:
-  encryption:
-    key: !secret api_enc
+  # encryption:
+  #  key: !secret encryption_key
   # reboot_timeout: 15min
   # reboot_timeout: 0s
 

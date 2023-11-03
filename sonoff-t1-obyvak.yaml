@@ -1,9 +1,9 @@
 ---
 substitutions:
-  esphome_name: kitchen_light
+  device_name: kitchen-light
 
 esphome:
-  name: ${esphome_name}
+  name: ${device_name}
   platform: ESP8266
   board: esp01_1m
 

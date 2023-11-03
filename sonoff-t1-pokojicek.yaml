@@ -1,9 +1,9 @@
 ---
 substitutions:
-  esphome_name: kids_light
+  device_name: kids-light
 
 esphome:
-  name: ${esphome_name}
+  name: ${device_name}
   platform: ESP8266
   board: esp01_1m
 
@@ -17,7 +17,7 @@ binary_sensor:
       mode: INPUT_PULLUP
       inverted: True
     on_press:
-      - light.toggle: ${esphome_name}
+      - light.toggle: ${device_name}
 
 output:
   - platform: gpio
@@ -26,6 +26,6 @@ output:
 
 light:
   - platform: binary
-    id: ${esphome_name}
-    name: ${esphome_name}
+    id: ${device_name}
+    name: ${device_name}
     output: light_relay

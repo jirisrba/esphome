@@ -1,5 +1,6 @@
 substitutions:
-  esphome_name: sonoff-pow-christmas
+  friendly_name: POW Christmas
+  device_name: pow-christmas
 
 esphome:
   name: ${esphome_name}
@@ -7,14 +8,6 @@ esphome:
   board: esp01_1m
 
 <<: !include common.yaml
-
-# Disable logging over USB
-logger:
-  baud_rate: 0
-
-uart:
-  rx_pin: RX
-  baud_rate: 4800
 
 binary_sensor:
   - platform: gpio
@@ -28,37 +21,9 @@ binary_sensor:
 
 switch:
   - platform: gpio
-    name: "${esphome_name}"
+    name: christmas
     pin: GPIO12
     id: relay
-
-output:
-  - platform: esp8266_pwm
-    id: pow_blue_led
-    pin:
-      number: GPIO13
-      inverted: yes
-
-light:
-  - platform: monochromatic
-    output: pow_blue_led
-    id: led
-    internal: true
-
-sensor:
-  - platform: cse7766
-    current:
-      name: "${esphome_name} current"
-      id: curr
-    voltage:
-      name: "${esphome_name} voltage"
-      id: volt
-    energy:
-      name: "${esphome_name} energy"
-      id: energy
-    power:
-      name: "${esphome_name} power"
-      id: power
 
 # switch ON
 sun:

@@ -1,9 +1,9 @@
 ---
 substitutions:
-  esphome_name: sonoff_t1_wc
+  device_name: t1-wc
 
 esphome:
-  name: ${esphome_name}
+  name: ${device_name}
   platform: ESP8266
   board: esp01_1m
 
