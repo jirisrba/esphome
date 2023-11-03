@@ -1,9 +1,9 @@
 ---
 substitutions:
-  esphome_name: sonoff-s20-01
+  device_name: s20-01
 
 esphome:
-  name: ${esphome_name}
+  name: ${device_name}
   platform: ESP8266
   board: esp01_1m
 
@@ -21,7 +21,7 @@ binary_sensor:
 
 switch:
   - platform: gpio
-    name: ${esphome_name}
+    name: ${device_name}
     pin: GPIO12
     id: relay
 

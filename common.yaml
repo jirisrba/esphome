@@ -18,7 +18,7 @@ wifi:
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
-    ssid: "${esphome_name}"
+    ssid: "${device_name}"
     password: "abcd1234"
 
 # fallback mechanism for when connecting to the configured WiFi fails
@@ -34,16 +34,21 @@ status_led:
 
 text_sensor:
   - platform: version
-    name: ${esphome_name}
+    name: ${device_name}
 
 # Enable logging
 logger:
-#  level: VERY_VERBOSE
+  level: INFO
+  # level: VERY_VERBOSE
+  # level: VERBOSE
+  # baud_rate: 0
 
 # Enable Home Assistant API
-#api:
-#   reboot_timeout: 15min
-#  reboot_timeout: 0s
+api:
+  encryption:
+    key: !secret api_enc
+  # reboot_timeout: 15min
+  # reboot_timeout: 0s
 
 # mqtt:
 #   broker: router.local

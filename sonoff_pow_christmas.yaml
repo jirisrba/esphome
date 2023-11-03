@@ -1,5 +1,6 @@
 substitutions:
-  esphome_name: sonoff_pow_christmas
+  friendly_name: POW Christmas
+  device_name: pow-christmas
 
 esphome:
   name: ${esphome_name}
