@@ -12,7 +12,7 @@ esphome:
     then:
       - if:
           condition:
-            lambda: 'return id(v_sensor).state > 10;'
+            lambda: "return id(v_sensor).state > 10;"
           then:
             - switch.turn_on: relay_1
           else:
@@ -167,7 +167,7 @@ display:
     if (id(page).state) {
       it.display_voltage(true);
       it.display_kwh(false);
-      it.printf(0, "%.1f", id(w_sensor).state);
+      it.printf(0, "%.1f", id(v_sensor).state);
       it.printf(1, "%.1f", id(a_sensor).state);
     } else {
       it.display_voltage(false);
@@ -209,7 +209,7 @@ switch:
     pin: GPIO02
     on_turn_on:
       - delay: 500ms
-      - switch.turn_off: relay_on  # bi-stable relay so no need to keep on
+      - switch.turn_off: relay_on # bi-stable relay so no need to keep on
       - light.turn_on: switch_led
     interlock: [relay_off]
   - platform: restart
@@ -250,3 +250,18 @@ interval:
           - light.turn_on: wifi_status_led
         else:
           - light.turn_off: wifi_status_led
+
+# switch sunrise and sunset
+sun:
+  latitude: !secret latitude
+  longitude: !secret longitude
+
+  # switch ON
+  on_sunrise:
+    - then:
+        - switch.turn_on: relay_1
+
+  # switch OFF
+  on_sunset:
+    - then:
+        - switch.turn_off: relay_1

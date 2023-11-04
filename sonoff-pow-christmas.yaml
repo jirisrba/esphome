@@ -31,8 +31,8 @@ sun:
   longitude: !secret longitude
   # switch ON
   on_sunset:
-  - then:
-    - switch.turn_on: relay
+    - then:
+        - switch.turn_on: relay
 
 # switch OFF
 time:
