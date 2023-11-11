@@ -253,8 +253,8 @@ interval:
 
 # switch sunrise and sunset
 sun:
-  latitude: !secret latitude
-  longitude: !secret longitude
+  latitude: !secret latitude_semanovice
+  longitude: !secret longitude_semanovice
 
   # switch ON
   on_sunrise:

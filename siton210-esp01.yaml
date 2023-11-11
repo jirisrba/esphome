@@ -2,8 +2,8 @@ substitutions:
   #komunikační piny, pokud používáte originální desku Siton WiFi modulu, nic neměňte
   rxPin: GPIO3
   txPin: GPIO1
-  node_name: "Siton210" #název zařízení
-  updates: 10s #četnost aktualizací
+  node_name: "siton210" #název zařízení
+  updates: 60s #četnost aktualizací
   adresa: "12" #ID meniče/adresa. Výchozí adresa Sitonu je 12 (0x0C)
 
 esphome:
@@ -13,14 +13,6 @@ esp8266:
   board: esp01_1m
 
 <<: !include common.yaml
-
-# Enable Home Assistant API
-api:
-  #encryption:
-    #POUŽIJTE VLASTNÍ VYGENEROVANÝ KLÍČ
-  #  key: ""
-
-captive_portal:
 
 uart:
   id: mod_bus
