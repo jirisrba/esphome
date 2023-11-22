@@ -2,12 +2,9 @@
 
 # change hostname => set use_address
 # wifi:
-#   #   ssid: !secret wifi_ssid
-#   #   password: !secret wifi_pass
-#   ssid: !secret wifi_ssid_ufo
-#   password: !secret wifi_pass_ufo
-#   #   # use_address: 192.168.2.253
-#   use_address: sonoff_s20_flower.local
+#   ssid: !secret wifi_ssid
+#   password: !secret wifi_pass
+#   use_address: sonoff_basic1.local
 
 wifi:
   networks:

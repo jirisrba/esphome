@@ -1,7 +1,7 @@
 ---
 substitutions:
-  friendly_name: Basic 1
-  device_name: sonoff_basic1
+  friendly_name: Sonoff basic 01
+  device_name: sonoff-basic-01
 
 esphome:
   name: ${device_name}
@@ -25,6 +25,7 @@ switch:
     name: $friendly_name
     id: relay
     pin: GPIO12
+    restore_mode: ALWAYS_ON
 
 # switch sunrise and sunset
 sun:

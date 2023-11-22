@@ -1,9 +1,10 @@
+---
 substitutions:
-  friendly_name: POW Christmas
+  friendly_name: Sonoff pow christmas
   device_name: pow-christmas
 
 esphome:
-  name: ${esphome_name}
+  name: ${device_name}
   platform: ESP8266
   board: esp01_1m
 
@@ -21,7 +22,7 @@ binary_sensor:
 
 switch:
   - platform: gpio
-    name: christmas
+    name: $friendly_name
     pin: GPIO12
     id: relay
 
