@@ -1,7 +1,7 @@
 ---
 substitutions:
-  friendly_name: Sonoff pow christmas
-  device_name: pow-christmas
+  friendly_name: Sonoff Pow Christmas
+  device_name: sonoff-pow-christmas
 
 esphome:
   name: ${device_name}
@@ -9,6 +9,11 @@ esphome:
   board: esp01_1m
 
 <<: !include common.yaml
+
+i2c:
+  sda: GPIO3
+  scl: GPIO1
+  scan: True
 
 binary_sensor:
   - platform: gpio
@@ -19,6 +24,17 @@ binary_sensor:
     id: button
     on_press:
       - switch.toggle: relay
+
+sensor:
+  - platform: sht3xd
+    temperature:
+      id: sht31_temp
+      name: "${friendly_name} Temperature"
+    humidity:
+      id: sht31_humid
+      name: "${friendly_name} Humidity"
+    address: 0x44
+    update_interval: 60s
 
 switch:
   - platform: gpio

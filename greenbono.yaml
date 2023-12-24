@@ -1,31 +1,61 @@
 # GBO-Aku https://www.yorix.cz/cz/greenbono/gbo-aku.htm
+substitutions:
+  friendly_name: Greenbono
+  device_name: esp8266-07
+
+<<: !include common.yaml
+
+esphome:
+  name: $device_name
+  platform: ESP8266
+  board: esp07
+
+logger:
+  level: INFO
+  baud_rate: 0
+
+uart:
+  id: mod_bus
+  tx_pin: 1
+  rx_pin: 3
+  baud_rate: 9600
+  stop_bits: 1
+
 modbus:
-  - name: greenbono
-    type: tcp
-    host: 192.168.2.8
-    port: 8899
-    sensors:
-      - name: LastValidI1
-        device_class: current
-        unit_of_measurement: dA
-        state_class: measurement
-        slave: 1
-        address: 8
-        input_type: input
-        data_type: int16
-      - name: LastValidU1
-        device_class: voltage
-        unit_of_measurement: V
-        state_class: measurement
-        slave: 1
-        address: 16
-        input_type: input
-        data_type: int16
-      - name: I_SSR
-        device_class: current
-        unit_of_measurement: A
-        state_class: measurement
-        slave: 1
-        address: 16
-        input_type: input
-        data_type: int16
+  id: modbus_greenbono
+
+modbus_controller:
+  - id: greenbono
+    address: 0x01
+    modbus_id: modbus_greenbono
+    update_interval: 10s
+
+sensor:
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: last_valid_i1
+    name: ${friendly_name} LastValidI1
+    address: 8
+    unit_of_measurement: A
+    register_type: read
+    value_type: U_WORD
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+
+  # - name: LastValidU1
+  #   device_class: voltage
+  #   unit_of_measurement: V
+  #   state_class: measurement
+  #   slave: 1
+  #   address: 16
+  #   input_type: input
+  #   data_type: int16
+  # - name: I_SSR
+  #   device_class: current
+  #   unit_of_measurement: A
+  #   state_class: measurement
+  #   slave: 1
+  #   address: 16
+  #   input_type: input
+  #   data_type: int16

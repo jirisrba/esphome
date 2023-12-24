@@ -1,6 +1,7 @@
 ---
 substitutions:
-  device_name: s20-02
+  friendly_name: Sonoff S20-02
+  device_name: sonoff-s20-02
 
 esphome:
   name: ${device_name}
@@ -21,28 +22,21 @@ binary_sensor:
 
 switch:
   - platform: gpio
-    name: ${device_name}
+    name: $friendly_name
     pin: GPIO12
     id: relay
 
-# switch ON/OFF
-time:
-  - platform: sntp
-    id: sntp_time
-    timezone: Europe/Prague
-    on_time:
-      # switch ON
-      - seconds: 00
-        minutes: 00
-        hours: 08
-        days_of_week: MON-SUN
-        then:
-          - switch.turn_on: relay
+# switch sunrise and sunset
+sun:
+  latitude: !secret latitude_semanovice
+  longitude: !secret longitude_semanovice
 
-      # OFF Every evening
-      - seconds: 00
-        minutes: 00
-        hours: 00
-        days_of_week: MON-SUN
-        then:
-          - switch.turn_off: relay
+  # switch ON
+  on_sunset:
+    - then:
+        - switch.turn_on: relay
+
+  # switch OFF
+  on_sunrise:
+    - then:
+        - switch.turn_off: relay

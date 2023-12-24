@@ -1,4 +1,4 @@
-# Basic Config
+# Sonoff POW Elite 20A
 substitutions:
   friendly_name: POW Elite 20A
   device_name: pow-elite-20a

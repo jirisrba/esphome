@@ -1,19 +1,14 @@
 ---
 substitutions:
-  esphome_name: sonoff_mini
+  friendly_name: Sonoff Mini 01
+  device_name: sonoff_mini
 
 esphome:
-  name: ${esphome_name}
+  name: ${device_name}
   platform: ESP8266
   board: esp01_1m
 
 <<: !include common.yaml
-
-switch:
-  - platform: gpio
-    name: hall_light
-    pin: GPIO12
-    id: relay
 
 binary_sensor:
   - platform: gpio
@@ -25,4 +20,10 @@ binary_sensor:
     # schodistak, nastaveno na zmenu stavu
     on_state:
       then:
-        - switch.toggle: relay
+        - switch.toggle: relay_1
+
+switch:
+  - platform: gpio
+    name: $friendly_name
+    pin: GPIO12
+    id: relay_1
