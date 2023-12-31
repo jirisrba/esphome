@@ -4,7 +4,8 @@
 # wifi:
 #   ssid: !secret wifi_ssid_ufo
 #   password: !secret wifi_pass_ufo
-#   use_address: sonoff-s20-02.local
+#   use_address: 192.168.2.115
+#   # use_address: sonoff-s20-02.local
 
 wifi:
   networks:
@@ -24,10 +25,10 @@ captive_portal:
 # web_server:
 #   port: 80
 
-status_led:
-  pin:
-    number: GPIO13
-    inverted: yes
+# status_led:
+#   pin:
+#     number: GPIO13
+#     inverted: yes
 
 text_sensor:
   - platform: version
@@ -58,5 +59,3 @@ time:
   - platform: homeassistant
     id: homeassistant_time
     timezone: Europe/Prague
-  # - platform: sntp
-  #   id: sntp_time

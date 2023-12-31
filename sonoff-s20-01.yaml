@@ -1,11 +1,16 @@
 ---
 substitutions:
-  device_name: s20-01
+  friendly_name: Christmas tree
+  device_name: sonoff-s20-01
 
 esphome:
   name: ${device_name}
   platform: ESP8266
   board: esp01_1m
+  on_boot: # Set the initial state of the realy to ON
+    priority: 250.0 # Wait until WiFi is connected to allow the sensor some time to settle
+    then:
+      - switch.turn_on: relay
 
 <<: !include common.yaml
 
@@ -21,15 +26,14 @@ binary_sensor:
 
 switch:
   - platform: gpio
-    name: ${device_name}
+    name: $friendly_name
     pin: GPIO12
     id: relay
 
-
 # switch ON/OFF
 time:
-  - platform: sntp
-    id: sntp_time
+  - platform: homeassistant
+    id: homeassistant_time
     timezone: Europe/Prague
     on_time:
       # switch ON
@@ -43,7 +47,7 @@ time:
       # OFF Every evening
       - seconds: 00
         minutes: 00
-        hours: 00
+        hours: 23
         days_of_week: MON-SUN
         then:
           - switch.turn_off: relay

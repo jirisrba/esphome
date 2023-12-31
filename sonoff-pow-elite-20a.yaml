@@ -3,6 +3,12 @@ substitutions:
   friendly_name: POW Elite 20A
   device_name: pow-elite-20a
 
+globals:
+  - id: nominal_voltage
+    type: int
+    restore_value: no
+    initial_value: "230"
+
 <<: !include common.yaml
 
 esphome:
@@ -24,7 +30,7 @@ esp32:
 captive_portal:
 
 logger:
-  level: INFO
+  level: DEBUG
 
 esp32_ble_tracker:
   scan_parameters:
@@ -45,12 +51,51 @@ sensor:
     current:
       name: $friendly_name Current
       id: a_sensor
+      unit_of_measurement: A
+      accuracy_decimals: 3
     voltage:
       name: $friendly_name Voltage
       id: v_sensor
+      unit_of_measurement: V
+      accuracy_decimals: 1
+      on_value_range:
+        - above: 10
+          then:
+            if:
+              condition:
+                for:
+                  time: 20min
+                  condition:
+                    switch.is_off: relay_1
+              then:
+                - switch.turn_on: relay_1        # overvoltage/undervoltage protection
+        # overvoltage protection
+        - above: !lambda "return id(nominal_voltage) * 1.15;"
+          then:
+            - switch.turn_off: relay_1
+            - homeassistant.service:
+                service: persistent_notification.create
+                data:
+                  title: Message from ${device_name}
+                data_template:
+                  message: Switch turned off because overvoltage protection activated
+        # undervoltage protection
+        - below: !lambda "return id(nominal_voltage) * 0.85;"
+          then:
+            - switch.turn_off: relay_1
+            - homeassistant.service:
+                service: persistent_notification.create
+                data:
+                  title: Message from ${device_name}
+                data_template:
+                  message: Switch turned off because undervoltage protection activated
+
     power:
       name: $friendly_name Power
       id: w_sensor
+      unit_of_measurement: "W"
+      accuracy_decimals: 0
+      icon: mdi:flash-outline
       on_value_range:
         - above: 4.0
           then:
@@ -96,13 +141,6 @@ sensor:
               ).c_str();
 
   - platform: template
-    name: $friendly_name ESP32 Internal Temp
-    device_class: temperature
-    unit_of_measurement: °C
-    id: esp32_temp
-    lambda: return temperatureRead();
-
-  - platform: template
     name: $friendly_name Power Factor
     device_class: power_factor
     id: power_factor
@@ -121,11 +159,7 @@ binary_sensor:
       - invert:
       - delayed_off: 10ms
     on_click:
-      - max_length: 350ms # short press to toggle the relay
-        then:
-          switch.toggle: relay_1
-      - min_length: 360ms # long press to cycle display info
-        max_length: 3s
+      - max_length: 350ms # short press to cycle display info
         then:
           - if:
               condition:
@@ -138,6 +172,10 @@ binary_sensor:
                 binary_sensor.template.publish:
                   id: page
                   state: ON
+      - min_length: 360ms # long press to toggle the relay
+        max_length: 3s
+        then:
+          switch.toggle: relay_1
   - platform: template # this is a fake sensor to tell the screen which info to show on display
     id: page
     publish_initial_state: true
@@ -192,6 +230,7 @@ switch:
       - switch.turn_on: relay_off
     turn_on_action:
       - switch.turn_on: relay_on
+
   - platform: gpio
     restore_mode: ALWAYS_OFF
     internal: true
@@ -250,18 +289,3 @@ interval:
           - light.turn_on: wifi_status_led
         else:
           - light.turn_off: wifi_status_led
-
-# switch sunrise and sunset
-sun:
-  latitude: !secret latitude_semanovice
-  longitude: !secret longitude_semanovice
-
-  # switch ON
-  on_sunrise:
-    - then:
-        - switch.turn_on: relay_1
-
-  # switch OFF
-  on_sunset:
-    - then:
-        - switch.turn_off: relay_1
