@@ -13,14 +13,14 @@ bk72xx:
   board: cbu
   framework:
     version: dev
-  family: bk7231n
+    loglevel: debug
 
 #Beken chips, unlike ESP, do not have an RTC memory for storing data. The settings are saved in flash memory every 10 minutes, not every time you change. If you need to shorten the time, then use the code below
 
 #https://github.com/libretiny-eu/libretiny/issues/75
 #https://github.com/libretiny-eu/libretiny/issues/41
-preferences:
-  flash_write_interval: 1min
+# preferences:
+#   flash_write_interval: 1min
 
 # Enable logging
 logger:

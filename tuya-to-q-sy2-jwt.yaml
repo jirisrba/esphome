@@ -1,0 +1,146 @@
+---
+substitutions:
+  device_name: tuya-to-q-sy2-jwt
+  friendly_name: Tuya TO-Q-SY2-JWT
+
+esphome:
+  name: ${device_name}
+  on_boot:
+    priority: -100
+    then:
+      switch.turn_on: relay
+
+<<: !include common.yaml
+
+# CBU Wi-Fi Module https://docs.libretiny.eu/boards/cbu/
+bk72xx:
+  board: cbu
+  framework:
+    version: dev
+
+#Beken chips, unlike ESP, do not have an RTC memory for storing data. The settings are saved in flash memory every 10 minutes, not every time you change. If you need to shorten the time, then use the code below
+
+#https://github.com/libretiny-eu/libretiny/issues/75
+#https://github.com/libretiny-eu/libretiny/issues/41
+# preferences:
+#   flash_write_interval: 1min
+
+# Enable logging
+logger:
+
+uart:
+  tx_pin: TX1
+  rx_pin: RX1
+  id: uart_bus
+  baud_rate: 4800
+  stop_bits: 1
+  data_bits: 8
+
+switch:
+  - platform: template
+    name: $friendly_name
+    id: relay
+    turn_on_action:
+      - switch.turn_on: on_relay
+    turn_off_action:
+      - switch.turn_on: off_relay
+    optimistic: true
+    internal: false #Hide - true \show - false
+    restore_mode: RESTORE_DEFAULT_ON
+  - platform: gpio
+    pin:
+      number: P24
+      inverted: true
+    id: off_relay
+    name: "OFF Relay"
+    restore_mode: ALWAYS_OFF
+    internal: True #Hide - true \show - false
+    interlock: [on_relay]
+    on_turn_on:
+      - light.turn_off: led
+      - binary_sensor.template.publish:
+          id: relaystate
+          state: OFF
+      - delay: 100ms
+      - switch.turn_off: off_relay
+
+  - platform: gpio
+    pin:
+      number: P26
+      inverted: true
+    id: on_relay
+    name: "ON Relay"
+    restore_mode: ALWAYS_OFF
+    internal: True #Hide - true \show - false
+    interlock: [off_relay]
+    on_turn_on:
+      - light.turn_on: led
+      - binary_sensor.template.publish:
+          id: relaystate
+          state: ON
+      - delay: 100ms
+      - switch.turn_off: on_relay
+
+sensor:
+  - platform: wifi_signal
+    name: $friendly_name WiFi RSSI
+    icon: mdi:wifi
+    update_interval: 60s
+
+  #Energy monitoring. Chip BL0942
+  - platform: bl0942
+    uart_id: uart_bus
+    voltage:
+      name: "$friendly_name Voltage"
+    current:
+      name: "$friendly_name Current"
+    power:
+      name: "$friendly_name Power"
+      filters:
+        multiply: -1
+    energy:
+      name: "$friendly_name Energy"
+      accuracy_decimals: 5
+    frequency:
+      name: "$friendly_name Frequency"
+      accuracy_decimals: 2
+    update_interval: 60s
+
+button:
+  - platform: template
+    name: "$friendly_name Toggle Relay"
+    id: soft_button
+    on_press:
+      switch.toggle: relay
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: P17
+      inverted: true
+      mode:
+        input: true
+    name: "$friendly_name Button"
+    id: hard_button
+    on_press:
+      switch.toggle: relay
+    internal: true
+  - platform: template
+    name: $friendly_name Relay State
+    id: relaystate
+
+light:
+  - platform: binary
+    name: "$friendly_name LED"
+    output: led_output
+    id: led
+    internal: true
+
+output:
+  - id: led_output
+    platform: gpio
+    pin:
+      number: P15
+      inverted: true
+      mode:
+        output: true
