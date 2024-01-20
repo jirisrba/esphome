@@ -11,6 +11,7 @@ esphome:
       switch.turn_on: relay
 
 <<: !include common.yaml
+<<: !include wifi-ufo8.yaml
 
 # CBU Wi-Fi Module https://docs.libretiny.eu/boards/cbu/
 bk72xx:
@@ -24,6 +25,9 @@ bk72xx:
 #https://github.com/libretiny-eu/libretiny/issues/41
 # preferences:
 #   flash_write_interval: 1min
+
+web_server:
+  port: 80
 
 # Enable logging
 logger:
