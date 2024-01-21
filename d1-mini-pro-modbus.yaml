@@ -74,13 +74,3 @@ sensor:
     register_type: read
     value_type: U_WORD
     accuracy_decimals: 0
-
-  - platform: modbus_controller
-    modbus_controller_id: greenbono
-    id: output_pi
-    name: ${friendly_name} OutputPI
-    address: 18
-    register_type: read
-    value_type: U_WORD
-    bitmask: 0x00FF
-    accuracy_decimals: 0
