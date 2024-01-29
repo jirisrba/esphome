@@ -1,0 +1,210 @@
+# GBO-Aku https://www.yorix.cz/cz/greenbono/gbo-aku.htm
+substitutions:
+  device_name: INVT iMars MG5KTL
+  friendly_name: invt-imars-mg5ktl
+  skip_updates_slow: "6"  #how many times to skip normal update for slow updating sensors
+
+<<: !include common.yaml
+# <<: !include wifi-ufo8.yaml
+
+esphome:
+  name: $device_name
+  on_boot:
+    priority: -100
+    then:
+      # TODO set time on boot from home assistant
+      # turn on auto mode at boot just in case
+      - lambda: |-
+          ESP_LOGI("mode", "Mode set to manual active power limit");
+
+          modbus_controller::ModbusController *controller = id(solar_inverter);
+          std::vector<uint16_t> data = {0x2};
+          esphome::modbus_controller::ModbusCommandItem command =
+              esphome::modbus_controller::ModbusCommandItem::create_write_multiple_command(controller, 0x131F, 1, data);
+          controller->queue_command(command);
+
+esp8266:
+  board: nodemcuv2
+
+logger:
+  level: VERY_VERBOSE
+  # hardware_uart: UART0_SWAP
+  # Don't write log messages to UART0 (GPIO1/GPIO3) if the inverter is connected to GPIO1/GPIO3
+  # baud_rate: 0
+
+web_server:
+  port: 80
+
+uart:
+  id: mod_bus
+  tx_pin: GPIO14
+  rx_pin: GPIO12
+  baud_rate: 9600
+  stop_bits: 1
+  debug:
+    direction: BOTH
+    dummy_receiver: false
+
+modbus:
+  id: modbus_inverter
+
+modbus_controller:
+  - id: solar_inverter
+    address: 0x01
+    modbus_id: modbus_inverter
+    setup_priority: -10
+    update_interval: 5s
+
+sensor:
+  - platform: wifi_signal
+    name: ${device_name} Wifi RSSI
+    update_interval: 60s
+
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: inverter_power_limit
+    name: ${device_name} Active Power Limit
+    address: 0x131E
+    unit_of_measurement: "%"
+    register_type: holding
+    value_type: U_WORD
+    filters:
+      - multiply: 0.01
+
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: pv1_voltage
+    name: ${device_name} PV1 voltage
+    address: 0x1690
+    unit_of_measurement: "V"
+    register_type: read
+    value_type: U_WORD
+    accuracy_decimals: 0
+
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: pv1_current1
+    name: ${device_name} PV1 current
+    address: 0x1691
+    unit_of_measurement: "A"
+    register_type: read
+    value_type: U_WORD
+    accuracy_decimals: 1
+
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: pv2_voltage
+    name: ${device_name} PV2 voltage
+    address: 0x1692
+    unit_of_measurement: "V"
+    register_type: read
+    value_type: U_WORD
+    accuracy_decimals: 0
+
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: pv2_current
+    name: ${device_name} PV2 current
+    address: 0x1693
+    unit_of_measurement: "A"
+    register_type: read
+    value_type: U_WORD
+    accuracy_decimals: 1
+
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: frequency
+    name: ${device_name} Grid frequency
+    address: 0x16A0
+    unit_of_measurement: "Hz"
+    register_type: read
+    value_type: U_WORD
+    accuracy_decimals: 1
+    update_interval: 60s
+
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: power_factor
+    name: "${device_name} Power factor"
+    address: 0x16A1
+    unit_of_measurement: ""
+    register_type: read
+    value_type: U_WORD
+    accuracy_decimals: 0
+
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: pv_power
+    name: "${device_name} PV Power"
+    address: 0x16A2
+    unit_of_measurement: "kW"
+    register_type: holding
+    value_type: FP32
+    device_class: power
+    accuracy_decimals: 1
+
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: ac_output_power
+    name: "${device_name} AC output power"
+    address: 0x16A4
+    unit_of_measurement: "kW"
+    register_type: holding
+    value_type: FP32
+    device_class: power
+    accuracy_decimals: 1
+
+  - platform: modbus_controller
+    id: temperature
+    name: "${device_name} Temperature"
+    address: 0x16A7
+    register_type: read
+    unit_of_measurement: °C
+    device_class: temperature
+    entity_category: diagnostic
+    icon: mdi:thermometer
+    value_type: U_WORD
+    accuracy_decimals: 1
+
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: energy_production_today
+    name: "${device_name} Energy total today"
+    address: 0x1616
+    register_type: holding
+    value_type: FP32
+    unit_of_measurement: kWh
+    device_class: energy
+    accuracy_decimals: 1
+
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: total_energy_production
+    name: "${device_name} Energy total"
+    address: 0x1652
+    register_type: holding
+    unit_of_measurement: kWh
+    value_type: FP32
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 1
+    update_interval: 60s
+
+text_sensor:
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: state
+    name: $device_name operational state
+    address: 0x167C
+    register_type: holding
+    raw_encode: HEXBYTES
+    lambda: |-
+      uint16_t value = modbus_controller::word_from_hex_str(x, 0);
+      switch (value) {
+        case 1: return std::string("self-inspection");
+        case 2: return std::string("running");
+        case 3: return std::string("warning");
+        case 4: return std::string("fault");
+        case 5: return std::string("manual stop");
+      }
+      return std::string("Unknown");
