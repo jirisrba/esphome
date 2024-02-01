@@ -9,6 +9,15 @@ esphome:
 
 <<: !include common.yaml
 
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_pass
+  fast_connect: true
+  manual_ip:
+    static_ip: 192.168.1.23
+    gateway: 192.168.1.1
+    subnet: 255.255.255.0
+
 binary_sensor:
   - platform: gpio
     pin:

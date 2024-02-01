@@ -1,6 +1,6 @@
 ---
 substitutions:
-  device_name: t1-wc
+  device_name: wc-light
 
 esphome:
   name: ${device_name}

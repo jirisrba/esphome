@@ -1,11 +1,11 @@
 # GBO-Aku https://www.yorix.cz/cz/greenbono/gbo-aku.htm
 substitutions:
-  device_name: INVT iMars MG5KTL
-  friendly_name: invt-imars-mg5ktl
+  device_name: invt-imars-mg5ktl
+  friendly_name: INVT iMars MG5KTL
   skip_updates_slow: "6"  #how many times to skip normal update for slow updating sensors
 
 <<: !include common.yaml
-# <<: !include wifi-ufo8.yaml
+<<: !include wifi-ufo8.yaml
 
 esphome:
   name: $device_name
@@ -24,7 +24,7 @@ esphome:
           controller->queue_command(command);
 
 esp8266:
-  board: nodemcuv2
+  board: d1_mini_pro
 
 logger:
   level: VERY_VERBOSE
@@ -53,7 +53,7 @@ modbus_controller:
     address: 0x01
     modbus_id: modbus_inverter
     setup_priority: -10
-    update_interval: 5s
+    update_interval: 10s
 
 sensor:
   - platform: wifi_signal
@@ -120,7 +120,7 @@ sensor:
     register_type: read
     value_type: U_WORD
     accuracy_decimals: 1
-    update_interval: 60s
+    skip_updates: $skip_updates_slow
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
@@ -188,7 +188,7 @@ sensor:
     device_class: energy
     state_class: total_increasing
     accuracy_decimals: 1
-    update_interval: 60s
+    skip_updates: $skip_updates_slow
 
 text_sensor:
   - platform: modbus_controller
