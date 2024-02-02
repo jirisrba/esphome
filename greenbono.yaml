@@ -7,6 +7,37 @@ substitutions:
 
 esphome:
   name: $device_name
+  on_boot:
+    priority: -100
+    then:
+      - delay: 1min
+      - lambda: |-
+          // get local time and sync to controller
+          time_t now = ::time(nullptr);
+          struct tm *time_info = ::localtime(&now);
+          int seconds = time_info->tm_sec;
+          int minutes = time_info->tm_min;
+          int hour = time_info->tm_hour;
+          int dow = time_info->tm_wday;
+          int day = time_info->tm_mday;
+          int month = time_info->tm_mon + 1;
+          int year = time_info->tm_year;
+          esphome::modbus_controller::ModbusController *controller = id(greenbono);
+          // if there is no internet connection localtime returns year 70
+          if (year != 1970)
+          {
+            // create the payload
+            std::vector<uint16_t> rtc_data_time = {uint16_t(seconds), uint16_t(minutes), uint16_t(hour), uint16_t(dow)};
+            std::vector<uint16_t> rtc_data_date = {uint16_t(day), uint16_t(month), uint16_t(year)};
+            // Create a modbus command item with the time information as the payload
+            esphome::modbus_controller::ModbusCommandItem set_rtc_command =
+              esphome::modbus_controller::ModbusCommandItem::create_write_multiple_command(
+                controller, 0, rtc_data_time.size(), rtc_data_time);
+            // Submit the command to the send queue
+            ESP_LOGI("ModbusLambda", "%02d:%02d:%02d %02d.%02d.%04d",
+                    hour, minutes, seconds, day, month, year);
+            controller->queue_command(set_rtc_command);
+          }
 
 esp8266:
   board: d1_mini_pro
@@ -30,7 +61,7 @@ modbus_controller:
   - id: greenbono
     address: 0x01
     modbus_id: modbus_greenbono
-    update_interval: 60s
+    update_interval: 15s
 
 sensor:
   - platform: wifi_signal
