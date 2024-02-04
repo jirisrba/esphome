@@ -76,121 +76,121 @@ sensor:
     name: $friendly_name Wifi RSSI
     update_interval: 60s
 
-#   - platform: modbus_controller
-#     modbus_controller_id: greenbono
-#     id: last_valid_i1
-#     name: ${friendly_name} LastValidI1
-#     address: 8
-#     unit_of_measurement: "A"
-#     register_type: read
-#     value_type: S_WORD
-#     accuracy_decimals: 1
-#     filters:
-#       - multiply: 0.01
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: last_valid_i1
+    name: ${friendly_name} LastValidI1
+    address: 8
+    unit_of_measurement: "A"
+    register_type: read
+    value_type: S_WORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.01
 
-#   - platform: modbus_controller
-#     modbus_controller_id: greenbono
-#     id: last_valid_u1
-#     name: ${friendly_name} LastValidU1
-#     address: 16
-#     unit_of_measurement: "V"
-#     register_type: read
-#     value_type: U_WORD
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: last_valid_u1
+    name: ${friendly_name} LastValidU1
+    address: 16
+    unit_of_measurement: "V"
+    register_type: read
+    value_type: U_WORD
 
-#   - platform: modbus_controller
-#     modbus_controller_id: greenbono
-#     id: ssr1
-#     name: ${friendly_name} SSR1
-#     unit_of_measurement: "%"
-#     address: 18
-#     register_type: read
-#     value_type: U_WORD
-#     bitmask: 0x00FF
-#     filters:
-#       - calibrate_linear:
-#         - 0 -> 0
-#         - 255 -> 100
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: ssr1
+    name: ${friendly_name} SSR1
+    unit_of_measurement: "%"
+    address: 18
+    register_type: read
+    value_type: U_WORD
+    bitmask: 0x00FF
+    filters:
+      - calibrate_linear:
+        - 0 -> 0
+        - 255 -> 100
 
-#   - platform: modbus_controller
-#     modbus_controller_id: greenbono
-#     id: i_ssr1
-#     name: ${friendly_name} I_SSR1
-#     address: 26
-#     unit_of_measurement: "A"
-#     register_type: read
-#     value_type: S_WORD
-#     accuracy_decimals: 1
-#     filters:
-#       - multiply: 0.01
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: i_ssr1
+    name: ${friendly_name} I_SSR1
+    address: 26
+    unit_of_measurement: "A"
+    register_type: read
+    value_type: S_WORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.01
 
-# binary_sensor:
-#   - platform: modbus_controller
-#     modbus_controller_id: greenbono
-#     id: k1_relay_status
-#     name: ${friendly_name} K1 Relay Status
-#     register_type: holding
-#     address: 10
-#     bitmask: 0x0001
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: eessrlevelfork1on
+    name: ${friendly_name} SSR Level For K1 On
+    unit_of_measurement: "%"
+    register_type: holding
+    address: 108
+    bitmask: 0x00FF
+    skip_updates: 5
+    filters:
+      - calibrate_linear:
+        - 0 -> 0
+        - 255 -> 100
 
-#   - platform: modbus_controller
-#     modbus_controller_id: greenbono
-#     id: k2_relay_status
-#     name: ${friendly_name} K2 Relay Status
-#     register_type: holding
-#     address: 10
-#     bitmask: 0x0002
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: eessrlevelfork2on
+    name: ${friendly_name} SSR Level For K2 On
+    unit_of_measurement: "%"
+    register_type: holding
+    address: 110
+    bitmask: 0x00FF
+    skip_updates: 5
+    filters:
+      - calibrate_linear:
+        - 0 -> 0
+        - 255 -> 100
 
-#   - platform: modbus_controller
-#     modbus_controller_id: greenbono
-#     id: k3_relay_status
-#     name: ${friendly_name} K3 Relay Status
-#     register_type: holding
-#     address: 10
-#     bitmask: 0x0004
+binary_sensor:
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: k1_relay_status
+    name: ${friendly_name} K1 Relay Status
+    register_type: holding
+    address: 10
+    bitmask: 0x0001
 
-#   - platform: modbus_controller
-#     modbus_controller_id: greenbono
-#     id: k4_relay_status
-#     name: ${friendly_name} K4 Relay Status
-#     register_type: holding
-#     address: 10
-#     bitmask: 0x0008
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: k2_relay_status
+    name: ${friendly_name} K2 Relay Status
+    register_type: holding
+    address: 10
+    bitmask: 0x0002
 
-#   - platform: modbus_controller
-#     modbus_controller_id: greenbono
-#     id: k5_relay_status
-#     name: ${friendly_name} K5 Relay Status
-#     register_type: holding
-#     address: 10
-#     bitmask: 0x0010
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: k3_relay_status
+    name: ${friendly_name} K3 Relay Status
+    register_type: holding
+    address: 10
+    bitmask: 0x0004
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: greenbono
-  #   id: eessrlevelfork1on
-  #   name: ${friendly_name} SSR Level For K1 On
-  #   unit_of_measurement: "%"
-  #   register_type: holding
-  #   address: 108
-  #   bitmask: 0x00FF
-  #   skip_updates: 5
-  #   filters:
-  #     - calibrate_linear:
-  #       - 0 -> 0
-  #       - 255 -> 100
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: k4_relay_status
+    name: ${friendly_name} K4 Relay Status
+    register_type: holding
+    address: 10
+    bitmask: 0x0008
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: greenbono
-  #   id: eessrlevelfork2on
-  #   name: ${friendly_name} SSR Level For K2 On
-  #   unit_of_measurement: "%"
-  #   register_type: holding
-  #   address: 110
-  #   bitmask: 0x00FF
-  #   skip_updates: 5
-  #   filters:
-  #     - calibrate_linear:
-  #       - 0 -> 0
-  #       - 255 -> 100
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: k5_relay_status
+    name: ${friendly_name} K5 Relay Status
+    register_type: holding
+    address: 10
+    bitmask: 0x0010
 
 text_sensor:
   - platform: modbus_controller
@@ -207,41 +207,40 @@ text_sensor:
       return {buffer};
     skip_updates: 5
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: greenbono
-  #   id: sh2starttime0
-  #   name: ${friendly_name} SH2StartTime0
-  #   address: 52
-  #   register_type: holding
-  #   skip_updates: 5
-  #   lambda: |-
-  #     int minute = data[0];
-  #     int hour = data[1];
-  #     if (hour != 255)
-  #     {
-  #       char buffer[6];
-  #       snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
-  #       return {buffer};
-  #     } else {
-  #       return {"off"};
-  #     }
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: sh2starttime0
+    name: ${friendly_name} SH2StartTime0
+    address: 52
+    register_type: holding
+    lambda: |-
+      int minute = data[0];
+      int hour = data[1];
+      if (hour != 255)
+      {
+        char buffer[6];
+        snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
+        return {buffer};
+      } else {
+        return {"off"};
+      }
+    skip_updates: 5
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: greenbono
-  #   id: sh2stoptime0
-  #   name: ${friendly_name} SH2StopTime0
-  #   address: 54
-  #   register_type: holding
-    # skip_updates: 5
-
-  #   lambda: |-
-      # int minute = data[0];
-      # int hour = data[1];
-      # if (hour >= 0 && minute >= 0)
-      # {
-      #   char buffer[6];
-      #   snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
-      #   return {buffer};
-      # } else {
-      #   return {"off"};
-      # }
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: sh2stoptime0
+    name: ${friendly_name} SH2StopTime0
+    address: 54
+    register_type: holding
+    lambda: |-
+      int minute = data[0];
+      int hour = data[1];
+      if (hour >= 0 && minute >= 0)
+      {
+        char buffer[6];
+        snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
+        return {buffer};
+      } else {
+        return {"off"};
+      }
+    skip_updates: 5
