@@ -6,22 +6,14 @@ substitutions:
   device_name: greenbono
 
 <<: !include common.yaml
-
-wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_pass
-  fast_connect: true
-  manual_ip:
-    static_ip: 192.168.1.202
-    gateway: 192.168.1.1
-    subnet: 255.255.255.0
+<<: !include wifi-ufo8.yaml
 
 esphome:
   name: $device_name
   on_boot:
     priority: -100
     then:
-      - delay: 1min
+      - delay: 30s
       - lambda: |-
           // get local time and sync to controller
           time_t now = ::time(nullptr);
