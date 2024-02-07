@@ -1,12 +1,17 @@
 ---
 substitutions:
-  device_name: openbk7231n-b976ac0b
-  friendly_name: OpenBK7231N_B976AC0B
+  device_name: tuya-to-q-sy1
+  friendly_name: Tuya TO-Q-SY1
 
 esphome:
   name: ${device_name}
+  on_boot:
+    priority: -100
+    then:
+      switch.turn_on: relay
 
 <<: !include common.yaml
+<<: !include wifi-ufo8.yaml
 
 # CBU Wi-Fi Module https://docs.libretiny.eu/boards/cbu/
 bk72xx:
@@ -25,24 +30,14 @@ bk72xx:
 # Enable logging
 logger:
 
-output:
-  - id: idLedOutput
-    platform: gpio
-    pin:
-      number: P15
-      inverted: true
-      mode:
-        output: true
-
 switch:
   - platform: template
     name: $friendly_name
-    id: idSwitch
-    icon: mdi:light-switch
+    id: relay
     turn_on_action:
-      - switch.turn_on: idONRelay
+      - switch.turn_on: on_relay
     turn_off_action:
-      - switch.turn_on: idOFFRelay
+      - switch.turn_on: off_relay
     optimistic: true
     internal: false #Hide - true \show - false
     restore_mode: RESTORE_DEFAULT_ON
@@ -51,47 +46,48 @@ switch:
     pin:
       number: P24
       inverted: true
-    id: idOFFRelay
+    id: off_relay
     name: "OFF Relay"
     restore_mode: ALWAYS_OFF
     internal: True #Hide - true \show - false
-    interlock: [idONRelay]
+    interlock: [on_relay]
     on_turn_on:
-      - light.turn_off: idLed
+      - light.turn_off: led
       - binary_sensor.template.publish:
-          id: idSwitchState
+          id: relaystate
           state: OFF
       - delay: 100ms
-      - switch.turn_off: idOFFRelay
+      - switch.turn_off: off_relay
 
   - platform: gpio
     pin:
       number: P26
       inverted: true
-    id: idONRelay
+    id: on_relay
     name: "ON Relay"
     restore_mode: ALWAYS_OFF
     internal: True #Hide - true \show - false
-    interlock: [idOFFRelay]
+    interlock: [off_relay]
     on_turn_on:
-      - light.turn_on: idLed
+      - light.turn_on: led
       - binary_sensor.template.publish:
-          id: idSwitchState
+          id: relaystate
           state: ON
       - delay: 100ms
-      - switch.turn_off: idONRelay
+      - switch.turn_off: on_relay
 
-light:
-  - platform: binary
-    name: $friendly_name LED
-    id: idLed
-    output: idLedOutput
-    internal: true #Hide - true \show - false
+sensor:
+  - platform: wifi_signal
+    name: $friendly_name WiFi RSSI
+    icon: mdi:wifi
+    update_interval: 60s
 
-# sensor:
-#   - platform: wifi_signal
-#     name: $friendly_name WiFi RSSI
-#     update_interval: 60s
+button:
+  - platform: template
+    name: "$friendly_name Toggle Relay"
+    id: soft_button
+    on_press:
+      switch.toggle: relay
 
 binary_sensor:
   - platform: gpio
@@ -100,13 +96,28 @@ binary_sensor:
       inverted: true
       mode:
         input: true
-    name: "Button"
-    icon: mdi:flash
-    id: idHardButton
+    name: "$friendly_name Button"
+    id: hard_button
     on_press:
-      switch.toggle: idSwitch
+      switch.toggle: relay
     internal: true
+
   - platform: template
-    name: Switch State
-    icon: mdi:light-switch
-    id: idSwitchState
+    name: $friendly_name Relay State
+    id: relaystate
+
+light:
+  - platform: binary
+    name: "$friendly_name LED"
+    output: led_output
+    id: led
+    internal: true
+
+output:
+  - id: led_output
+    platform: gpio
+    pin:
+      number: P15
+      inverted: true
+      mode:
+        output: true
