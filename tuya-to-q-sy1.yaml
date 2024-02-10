@@ -122,11 +122,6 @@ output:
       mode:
         output: true
 
-text_sensor:
-  - platform: sun
-    name: Sun Next Sunrise
-    type: sunrise
-
 # switch sunrise and sunset
 sun:
   latitude: !secret latitude_semanovice

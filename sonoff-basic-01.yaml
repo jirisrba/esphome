@@ -13,6 +13,7 @@ esphome:
       - switch.turn_on: relay
 
 <<: !include common.yaml
+<<: !include wifi-ufo8.yaml
 
 sensor:
   - platform: wifi_signal

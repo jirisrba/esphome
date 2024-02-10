@@ -4,7 +4,8 @@
 wifi:
   ssid: !secret wifi_ssid_ufo
   password: !secret wifi_pass_ufo
-  # use_address: 192.168.1.200
+  fast_connect: true
+  # use_address: 192.168.2.122
   # use_address: sonoff-s20-02.local
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails

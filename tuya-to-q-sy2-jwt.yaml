@@ -149,3 +149,29 @@ output:
       inverted: true
       mode:
         output: true
+
+text_sensor:
+  - platform: sun
+    name: Sunrise switch on
+    type: sunrise
+    elevation: -5°
+  - platform: sun
+    name: Sunset switch off
+    type: sunset
+    elevation: 10°
+
+sun:
+  latitude: !secret latitude_semanovice
+  longitude: !secret longitude_semanovice
+
+  # switch ON around 20 minutes before sunrise
+  on_sunrise:
+    - elevation: -5°
+      then:
+        - switch.turn_on: relay
+
+  # switch OFF 30 minutes after sunset
+  on_sunset:
+    - elevation: 10°
+      then:
+        - switch.turn_off: relay
