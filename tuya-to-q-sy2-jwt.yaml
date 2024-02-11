@@ -158,7 +158,7 @@ text_sensor:
   - platform: sun
     name: Sunset switch off
     type: sunset
-    elevation: 10°
+    elevation: -5°
 
 sun:
   latitude: !secret latitude_semanovice
@@ -170,8 +170,8 @@ sun:
       then:
         - switch.turn_on: relay
 
-  # switch OFF 30 minutes after sunset
+  # switch OFF around 20 minutes after sunset
   on_sunset:
-    - elevation: 10°
+    - elevation: -5°
       then:
         - switch.turn_off: relay
