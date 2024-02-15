@@ -31,7 +31,6 @@ esp32:
 
 logger:
   level: VERY_VERBOSE
-  # hardware_uart: UART0_SWAP
   # Don't write log messages to UART0 (GPIO1/GPIO3) if the inverter is connected to GPIO1/GPIO3
   # baud_rate: 0
 
@@ -202,8 +201,62 @@ sensor:
     filters:
       - multiply: 0.01
 
+button:
+  - platform: template
+    name: ${device_name} start
+    on_press:
+      then:
+        - lambda: |-
+            modbus_controller::ModbusController *controller = id(solar_inverter);
+            modbus_controller::ModbusCommandItem start =
+                modbus_controller::ModbusCommandItem::create_write_single_command(controller, 0x1400, 0xAAAA);
+            controller->queue_command(start);
 
-# text_sensor:
+  - platform: template
+    name: ${device_name} stop
+    on_press:
+      then:
+        - lambda: |-
+            modbus_controller::ModbusController *controller = id(solar_inverter);
+            modbus_controller::ModbusCommandItem stop =
+                modbus_controller::ModbusCommandItem::create_write_single_command(controller, 0x1400, 0x5555);
+            controller->queue_command(stop);
+
+select:
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: active_power_limit
+    name: "${device_name} Active power limit mode"
+    address: 0x131F
+    value_type: U_WORD
+    optionsmap:
+      "Disable": 0
+      "Auto mode to 3.6kW": 1
+      "Manual mode": 2
+
+text_sensor:
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: fault_code
+    name: $device_name Fault code
+    address: 0x1670
+    register_type: holding
+    raw_encode: HEXBYTES
+
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: current_datetime
+    name: ${friendly_name} current datetime
+    address: 0x1678
+    register_type: holding
+    register_count: 4
+    lambda: |-
+      char buffer[20];
+      snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d %02d.%02d.%04d",
+        data[4], data[5], data[6], data[2], data[1], data[0]);
+      return {buffer};
+    skip_updates: 5
+
 #   - platform: modbus_controller
 #     modbus_controller_id: solar_inverter
 #     id: state
