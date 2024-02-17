@@ -1,4 +1,5 @@
-# GBO-Aku https://www.yorix.cz/cz/greenbono/gbo-aku.htm
+# INVT IMARS MG5KTL - Single-Phase Grid Inverter 5kW with 2 MPPT
+
 substitutions:
   device_name: invt-imars-mg5ktl
   friendly_name: INVT iMars MG5KTL
@@ -9,19 +10,38 @@ substitutions:
 
 esphome:
   name: $device_name
-  # on_boot:
-  #   priority: -100
-  #   then:
-  #     # TODO set time on boot from home assistant
-  #     # turn on auto mode at boot
-  #     - lambda: |-
-  #         ESP_LOGI("mode", "Mode set to manual active power limit");
-
-  #         modbus_controller::ModbusController *controller = id(solar_inverter);
-  #         std::vector<uint16_t> data = {0x2};
-  #         esphome::modbus_controller::ModbusCommandItem command =
-  #             esphome::modbus_controller::ModbusCommandItem::create_write_multiple_command(controller, 0x131F, data.size(), data);
-  #         controller->queue_command(command);
+  on_boot:
+    priority: -100
+    then:
+      - lambda: |-
+          // get local time and sync to inverter RTC
+          time_t now = ::time(nullptr);
+          struct tm *time_info = ::localtime(&now);
+          int second = time_info->tm_sec;
+          int minute = time_info->tm_min;
+          int hour = time_info->tm_hour;
+          int wday = time_info->tm_wday;
+          int day = time_info->tm_mday;
+          int month = time_info->tm_mon + 1;
+          int year = time_info->tm_year % 100;
+          esphome::modbus_controller::ModbusController *controller = id(solar_inverter);
+          // if there is no internet connection localtime returns year 70
+          if (year != 70)
+          {
+            // create the payload
+            std::vector<uint16_t> rtc_data = {uint16_t(year << 8 | month),
+                                              uint16_t(day << 8 | 0x00),
+                                              uint16_t((hour << 8) | minute),
+                                              uint16_t((second << 8) | wday)
+                                              };
+            // Create a modbus command item with the time information as the payload
+            ESP_LOGI("ModbusLambda", "%02d:%02d:%02d %02d.%02d.%04d",
+                    hour, minute, second, day, month, year + 2000);
+            esphome::modbus_controller::ModbusCommandItem set_rtc_command =
+                esphome::modbus_controller::ModbusCommandItem::create_write_multiple_command(
+                    controller, 0x1678, rtc_data.size(), rtc_data);
+            controller->queue_command(set_rtc_command);
+          }
 
 esp32:
   board: esp32doit-devkit-v1
@@ -52,16 +72,16 @@ modbus_controller:
     address: 0x01
     modbus_id: modbus_inverter
     setup_priority: -10
-    update_interval: 15s
+    update_interval: 10s
 
 sensor:
-  - platform: wifi_signal
-    name: ${device_name} Wifi RSSI
-    update_interval: 60s
+  # - platform: wifi_signal
+  #   name: ${device_name} Wifi RSSI
+  #   update_interval: 60s
 
   # - platform: modbus_controller
   #   modbus_controller_id: solar_inverter
-  #   id: inverter_power_limit
+  #   id: active_power_limit
   #   name: ${device_name} Active Power Limit
   #   address: 0x131E
   #   unit_of_measurement: "%"
@@ -78,18 +98,22 @@ sensor:
   #   unit_of_measurement: "V"
   #   register_type: holding
   #   value_type: U_WORD
+      # device_class: voltage
+      # icon: mdi:flash
   #   accuracy_decimals: 0
   #   filters:
   #     - multiply: 0.1
 
   # - platform: modbus_controller
   #   modbus_controller_id: solar_inverter
-  #   id: pv1_current1
+  #   id: pv1_current
   #   name: ${device_name} PV1 current
   #   address: 0x1691
   #   unit_of_measurement: "A"
   #   register_type: holding
   #   value_type: U_WORD
+      # device_class: current
+      # icon: mdi:flash
   #   accuracy_decimals: 1
     # filters:
     #   - multiply: 0.1
@@ -102,6 +126,8 @@ sensor:
   #   unit_of_measurement: "V"
   #   register_type: holding
   #   value_type: U_WORD
+    # device_class: voltage
+    # icon: mdi:flash
   #   accuracy_decimals: 0
 
   # - platform: modbus_controller
@@ -112,11 +138,39 @@ sensor:
   #   unit_of_measurement: "A"
   #   register_type: holding
   #   value_type: U_WORD
+    # device_class: current
+    # icon: mdi:flash
   #   accuracy_decimals: 1
 
   # - platform: modbus_controller
   #   modbus_controller_id: solar_inverter
-  #   id: frequency
+  #   id: grid_voltage
+  #   name: "${device_name} Grid voltage phase U"
+  #   address: 0x1698
+  #   unit_of_measurement: "V"
+  #   register_type: holding
+  #   value_type: U_WORD
+  #   device_class: voltage
+  #   icon: mdi:flash
+  #   accuracy_decimals: 0
+  #   filters:
+  #     - multiply: 0.1
+
+  # - platform: modbus_controller
+  #   modbus_controller_id: solar_inverter
+  #   id: grid_current
+  #   name: "${device_name} Grid current phase U"
+  #   address: 0x1699
+  #   unit_of_measurement: "A"
+  #   register_type: holding
+  #   value_type: U_WORD
+  #   device_class: current
+  #   icon: mdi:flash
+  #   accuracy_decimals: 1
+
+  # - platform: modbus_controller
+  #   modbus_controller_id: solar_inverter
+  #   id: grid_frequency
   #   name: ${device_name} Grid frequency
   #   address: 0x16A0
   #   unit_of_measurement: "Hz"
@@ -137,23 +191,23 @@ sensor:
 
   # - platform: modbus_controller
   #   modbus_controller_id: solar_inverter
-  #   id: pv_power
-  #   name: "${device_name} PV Power"
+  #   id: pv_active_power
+  #   name: "${device_name} PV Active Power"
   #   address: 0x16A2
   #   unit_of_measurement: "kW"
   #   register_type: holding
-  #   value_type: FP32
+  #   value_type: U_DWORD
   #   device_class: power
   #   accuracy_decimals: 1
 
   # - platform: modbus_controller
   #   modbus_controller_id: solar_inverter
-  #   id: ac_output_power
-  #   name: "${device_name} AC output power"
+  #   id: ac_output_active_power
+  #   name: "${device_name} AC output active power"
   #   address: 0x16A4
   #   unit_of_measurement: "kW"
   #   register_type: holding
-  #   value_type: FP32
+  #   value_type: U_DWORD
   #   device_class: power
   #   accuracy_decimals: 1
 
@@ -169,6 +223,7 @@ sensor:
   #   value_type: U_WORD
   #   filters:
   #     - multiply: 0.01
+  #   skip_updates: $skip_updates_slow
 
   # - platform: modbus_controller
   #   modbus_controller_id: solar_inverter
@@ -180,16 +235,12 @@ sensor:
   #   unit_of_measurement: kWh
   #   device_class: energy
   #   accuracy_decimals: 1
-
-# [16:47:30][V][modbus:042]: Modbus received Byte  0 (0X0)
-# [16:47:30][V][modbus:042]: Modbus received Byte  5 (0X5)
-# [16:47:30][V][modbus:042]: Modbus received Byte  68 (0X44)
-# [16:47:30][V][modbus:042]: Modbus received Byte  116 (0X74)
+  #   skip_updates: $skip_updates_slow
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
     id: total_energy_production
-    name: "${device_name} Energy total"
+    name: "${device_name} Total energy production"
     address: 0x1652
     register_type: holding
     unit_of_measurement: kWh
@@ -197,9 +248,9 @@ sensor:
     device_class: energy
     state_class: total_increasing
     accuracy_decimals: 1
-    skip_updates: $skip_updates_slow
     filters:
       - multiply: 0.01
+    skip_updates: $skip_updates_slow
 
 button:
   - platform: template
@@ -225,7 +276,7 @@ button:
 select:
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
-    id: active_power_limit
+    id: active_power_limit_mode
     name: "${device_name} Active power limit mode"
     address: 0x131F
     value_type: U_WORD
@@ -235,13 +286,13 @@ select:
       "Manual mode": 2
 
 text_sensor:
-  - platform: modbus_controller
-    modbus_controller_id: solar_inverter
-    id: fault_code
-    name: $device_name Fault code
-    address: 0x1670
-    register_type: holding
-    raw_encode: HEXBYTES
+  # - platform: modbus_controller
+  #   modbus_controller_id: solar_inverter
+  #   id: fault_code
+  #   name: $device_name Fault code
+  #   address: 0x1670
+  #   register_type: holding
+  #   raw_encode: HEXBYTES
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
@@ -253,7 +304,7 @@ text_sensor:
     lambda: |-
       char buffer[20];
       snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d %02d.%02d.%04d",
-        data[4], data[5], data[6], data[2], data[1], data[0]);
+        data[4], data[5], data[6], data[2], data[1], data[0] + 2000);
       return {buffer};
     skip_updates: 5
 

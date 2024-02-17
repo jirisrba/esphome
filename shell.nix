@@ -5,9 +5,9 @@ in
 
 pkgs.mkShellNoCC {
   packages = with pkgs; [
+  esphome
   esptool
   git
   platformio
-  esphome
   ];
 }
