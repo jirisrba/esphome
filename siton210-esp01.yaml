@@ -1,18 +1,23 @@
+# Siton 210
+# source: https://github.com/TataGEEK/Siton210/blob/main/siton210.yaml
+
 substitutions:
   #komunikační piny, pokud používáte originální desku Siton WiFi modulu, nic neměňte
   rxPin: GPIO3
   txPin: GPIO1
-  node_name: "siton210" #název zařízení
+  device_name: "siton210" #název zařízení
   updates: 60s #četnost aktualizací
   adresa: "12" #ID meniče/adresa. Výchozí adresa Sitonu je 12 (0x0C)
+
+
+<<: !include common.yaml
+<<: !include wifi-ufo8.yaml
 
 esphome:
   name: siton210
 
 esp8266:
   board: esp01_1m
-
-<<: !include common.yaml
 
 uart:
   id: mod_bus
@@ -37,7 +42,7 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: siton210
     id: napeti
-    name: "${node_name} Napětí"
+    name: "${device_name} Voltage"
     state_class: measurement
     device_class: voltage
     address: 0x0004
@@ -51,7 +56,7 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: siton210
     id: proud
-    name: "${node_name} Proud"
+    name: "${device_name} Current"
     state_class: measurement
     device_class: current
     address: 0x0005
@@ -67,7 +72,7 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: siton210
     id: vykon
-    name: "${node_name} Výkon"
+    name: "${device_name} Power"
     address: 0x0006
     state_class: measurement
     device_class: power
@@ -80,7 +85,7 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: siton210
     id: teplota
-    name: "${node_name} Teplota"
+    name: "${device_name} Temperature"
     state_class: measurement
     device_class: temperature
     address: 0x0007
@@ -92,7 +97,7 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: siton210
     id: vyroba
-    name: "${node_name} Výroba kWh"
+    name: "${device_name} Energy kWh"
     state_class: total_increasing
     device_class: energy
     address: 0x000C
@@ -104,35 +109,14 @@ sensor:
     filters:
       - multiply: 0.001
 
-  - platform: uptime
-    name: "${node_name} uptime"
-    entity_category: diagnostic
-    disabled_by_default: false
-
   - platform: wifi_signal
-    name: "${node_name} WiFi Signal"
+    name: "${device_name} WiFi Signal"
     entity_category: diagnostic
     disabled_by_default: true
 
 text_sensor:
   - platform: wifi_info
-    ip_address:
-      name: "${node_name} IP Address"
-      entity_category: diagnostic
-      disabled_by_default: true
-    ssid:
-      name: "${node_name} Connected SSID"
-      entity_category: diagnostic
-      disabled_by_default: true
-    bssid:
-      name: "${node_name} Connected BSSID"
-      entity_category: diagnostic
-      disabled_by_default: true
-    mac_address:
-      name: "${node_name} Mac Wifi Address"
-      entity_category: diagnostic
-      disabled_by_default: true
     scan_results:
-      name: "${node_name} Latest Scan Result"
+      name: "${device_name} Latest Scan Result"
       entity_category: diagnostic
       disabled_by_default: true
