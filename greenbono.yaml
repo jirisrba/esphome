@@ -218,7 +218,7 @@ text_sensor:
         snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
         return {buffer};
       } else {
-        return {"off"};
+        return {"OFF"};
       }
     skip_updates: 5
 
@@ -237,6 +237,6 @@ text_sensor:
         snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
         return {buffer};
       } else {
-        return {"off"};
+        return {"OFF"};
       }
     skip_updates: 5
