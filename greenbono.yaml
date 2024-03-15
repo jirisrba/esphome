@@ -44,7 +44,6 @@ esphome:
             controller->queue_command(set_rtc_command);
           }
 
-
 esp8266:
   board: d1_mini_pro
 
@@ -198,7 +197,7 @@ text_sensor:
     register_type: holding
     register_count: 5
     lambda: |-
-      char buffer[20];
+      char buffer[26];
       snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d %02d.%02d.%04d",
         data[3], data[0], data[1], data[7], data[6], (data[8] << 8 | data[9]) + 2000);
       return {buffer};
@@ -215,7 +214,7 @@ text_sensor:
       int hour = data[1];
       if (hour != 255)
       {
-        char buffer[6];
+        char buffer[8];
         snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
         return {buffer};
       } else {
@@ -232,9 +231,9 @@ text_sensor:
     lambda: |-
       int minute = data[0];
       int hour = data[1];
-      if (hour >= 0 && minute >= 0)
+      if (hour != 255)
       {
-        char buffer[6];
+        char buffer[8];
         snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
         return {buffer};
       } else {
