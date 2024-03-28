@@ -46,13 +46,8 @@ esphome:
 esp32:
   board: esp32doit-devkit-v1
 
-# esp8266:
-#   board: d1_mini_pro
-
 logger:
   level: VERY_VERBOSE
-  # Don't write log messages to UART0 (GPIO1/GPIO3) if the inverter is connected to GPIO1/GPIO3
-  # baud_rate: 0
 
 web_server:
   port: 80
@@ -75,167 +70,165 @@ modbus_controller:
     update_interval: 10s
 
 sensor:
-  # - platform: wifi_signal
-  #   name: ${device_name} Wifi RSSI
-  #   update_interval: 60s
+  - platform: wifi_signal
+    name: ${device_name} Wifi RSSI
+    update_interval: 60s
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: solar_inverter
-  #   id: active_power_limit
-  #   name: ${device_name} Active Power Limit
-  #   address: 0x131E
-  #   unit_of_measurement: "%"
-  #   register_type: holding
-  #   value_type: U_WORD
-  #   filters:
-  #     - multiply: 0.01
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: active_power_limit
+    name: ${device_name} Active Power Limit
+    address: 0x131E
+    unit_of_measurement: "%"
+    register_type: holding
+    value_type: U_WORD
+    filters:
+      - multiply: 0.01
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: solar_inverter
-  #   id: pv1_voltage
-  #   name: ${device_name} PV1 voltage
-  #   address: 0x1690
-  #   unit_of_measurement: "V"
-  #   register_type: holding
-  #   value_type: U_WORD
-      # device_class: voltage
-      # icon: mdi:flash
-  #   accuracy_decimals: 0
-  #   filters:
-  #     - multiply: 0.1
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: pv1_voltage
+    name: ${device_name} PV1 voltage
+    address: 0x1690
+    unit_of_measurement: "V"
+    register_type: holding
+    value_type: U_WORD
+    device_class: voltage
+    icon: mdi:flash
+    accuracy_decimals: 0
+    filters:
+      - multiply: 0.1
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: solar_inverter
-  #   id: pv1_current
-  #   name: ${device_name} PV1 current
-  #   address: 0x1691
-  #   unit_of_measurement: "A"
-  #   register_type: holding
-  #   value_type: U_WORD
-      # device_class: current
-      # icon: mdi:flash
-  #   accuracy_decimals: 1
-    # filters:
-    #   - multiply: 0.1
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: pv1_current
+    name: ${device_name} PV1 current
+    address: 0x1691
+    unit_of_measurement: "A"
+    register_type: holding
+    value_type: U_WORD
+    device_class: current
+    icon: mdi:flash
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: solar_inverter
-  #   id: pv2_voltage
-  #   name: ${device_name} PV2 voltage
-  #   address: 0x1692
-  #   unit_of_measurement: "V"
-  #   register_type: holding
-  #   value_type: U_WORD
-    # device_class: voltage
-    # icon: mdi:flash
-  #   accuracy_decimals: 0
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: pv2_voltage
+    name: ${device_name} PV2 voltage
+    address: 0x1692
+    unit_of_measurement: "V"
+    register_type: holding
+    value_type: U_WORD
+    device_class: voltage
+    icon: mdi:flash
+    accuracy_decimals: 0
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: solar_inverter
-  #   id: pv2_current
-  #   name: ${device_name} PV2 current
-  #   address: 0x1693
-  #   unit_of_measurement: "A"
-  #   register_type: holding
-  #   value_type: U_WORD
-    # device_class: current
-    # icon: mdi:flash
-  #   accuracy_decimals: 1
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: pv2_current
+    name: ${device_name} PV2 current
+    address: 0x1693
+    unit_of_measurement: "A"
+    register_type: holding
+    value_type: U_WORD
+    device_class: current
+    icon: mdi:flash
+    accuracy_decimals: 1
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: solar_inverter
-  #   id: grid_voltage
-  #   name: "${device_name} Grid voltage phase U"
-  #   address: 0x1698
-  #   unit_of_measurement: "V"
-  #   register_type: holding
-  #   value_type: U_WORD
-  #   device_class: voltage
-  #   icon: mdi:flash
-  #   accuracy_decimals: 0
-  #   filters:
-  #     - multiply: 0.1
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: grid_voltage
+    name: "${device_name} Grid voltage phase U"
+    address: 0x1698
+    unit_of_measurement: "V"
+    register_type: holding
+    value_type: U_WORD
+    device_class: voltage
+    icon: mdi:flash
+    accuracy_decimals: 0
+    filters:
+      - multiply: 0.1
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: solar_inverter
-  #   id: grid_current
-  #   name: "${device_name} Grid current phase U"
-  #   address: 0x1699
-  #   unit_of_measurement: "A"
-  #   register_type: holding
-  #   value_type: U_WORD
-  #   device_class: current
-  #   icon: mdi:flash
-  #   accuracy_decimals: 1
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: grid_current
+    name: "${device_name} Grid current phase U"
+    address: 0x1699
+    unit_of_measurement: "A"
+    register_type: holding
+    value_type: U_WORD
+    device_class: current
+    icon: mdi:flash
+    accuracy_decimals: 1
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: solar_inverter
-  #   id: grid_frequency
-  #   name: ${device_name} Grid frequency
-  #   address: 0x16A0
-  #   unit_of_measurement: "Hz"
-  #   register_type: holding
-  #   value_type: U_WORD
-  #   accuracy_decimals: 1
-  #   skip_updates: $skip_updates_slow
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: grid_frequency
+    name: ${device_name} Grid frequency
+    address: 0x16A0
+    unit_of_measurement: "Hz"
+    register_type: holding
+    value_type: U_WORD
+    accuracy_decimals: 1
+    skip_updates: $skip_updates_slow
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: solar_inverter
-  #   id: power_factor
-  #   name: "${device_name} Power factor"
-  #   address: 0x16A1
-  #   unit_of_measurement: ""
-  #   register_type: holding
-  #   value_type: U_WORD
-  #   accuracy_decimals: 0
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: power_factor
+    name: "${device_name} Power factor"
+    address: 0x16A1
+    unit_of_measurement: ""
+    register_type: holding
+    value_type: U_WORD
+    accuracy_decimals: 0
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: solar_inverter
-  #   id: pv_active_power
-  #   name: "${device_name} PV Active Power"
-  #   address: 0x16A2
-  #   unit_of_measurement: "kW"
-  #   register_type: holding
-  #   value_type: U_DWORD
-  #   device_class: power
-  #   accuracy_decimals: 1
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: pv_active_power
+    name: "${device_name} PV Active Power"
+    address: 0x16A2
+    unit_of_measurement: "W"
+    register_type: holding
+    value_type: U_DWORD
+    device_class: power
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: solar_inverter
-  #   id: ac_output_active_power
-  #   name: "${device_name} AC output active power"
-  #   address: 0x16A4
-  #   unit_of_measurement: "kW"
-  #   register_type: holding
-  #   value_type: U_DWORD
-  #   device_class: power
-  #   accuracy_decimals: 1
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: ac_output_active_power
+    name: "${device_name} AC output active power"
+    address: 0x16A4
+    unit_of_measurement: "W"
+    register_type: holding
+    value_type: U_DWORD
+    device_class: power
 
-  # - platform: modbus_controller
-  #   id: temperature
-  #   name: "${device_name} Temperature"
-  #   address: 0x16A6
-  #   register_type: holding
-  #   unit_of_measurement: °C
-  #   device_class: temperature
-  #   entity_category: diagnostic
-  #   icon: mdi:thermometer
-  #   value_type: U_WORD
-  #   filters:
-  #     - multiply: 0.01
-  #   skip_updates: $skip_updates_slow
+  - platform: modbus_controller
+    id: temperature
+    name: "${device_name} Temperature"
+    address: 0x16A6
+    register_type: holding
+    unit_of_measurement: °C
+    device_class: temperature
+    entity_category: diagnostic
+    icon: mdi:thermometer
+    value_type: U_WORD
+    filters:
+      - multiply: 0.01
+    skip_updates: $skip_updates_slow
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: solar_inverter
-  #   id: energy_production_today
-  #   name: "${device_name} Energy total today"
-  #   address: 0x1616
-  #   register_type: holding
-  #   value_type: FP32
-  #   unit_of_measurement: kWh
-  #   device_class: energy
-  #   accuracy_decimals: 1
-  #   skip_updates: $skip_updates_slow
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: energy_production_today
+    name: "${device_name} Energy total today"
+    address: 0x1616
+    register_type: holding
+    value_type: FP32
+    unit_of_measurement: kWh
+    device_class: energy
+    accuracy_decimals: 1
+    skip_updates: $skip_updates_slow
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
@@ -286,13 +279,13 @@ select:
       "Manual mode": 2
 
 text_sensor:
-  # - platform: modbus_controller
-  #   modbus_controller_id: solar_inverter
-  #   id: fault_code
-  #   name: $device_name Fault code
-  #   address: 0x1670
-  #   register_type: holding
-  #   raw_encode: HEXBYTES
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: fault_code
+    name: $device_name Fault code
+    address: 0x1670
+    register_type: holding
+    raw_encode: HEXBYTES
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
@@ -308,20 +301,20 @@ text_sensor:
       return {buffer};
     skip_updates: 5
 
-#   - platform: modbus_controller
-#     modbus_controller_id: solar_inverter
-#     id: state
-#     name: $device_name operational state
-#     address: 0x167C
-#     register_type: holding
-#     raw_encode: HEXBYTES
-#     lambda: |-
-#       uint16_t value = modbus_controller::word_from_hex_str(x, 0);
-#       switch (value) {
-#         case 1: return std::string("self-inspection");
-#         case 2: return std::string("running");
-#         case 3: return std::string("warning");
-#         case 4: return std::string("fault");
-#         case 5: return std::string("manual stop");
-#       }
-#       return std::string("Unknown");
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
+    id: state
+    name: $device_name operational state
+    address: 0x167C
+    register_type: holding
+    raw_encode: HEXBYTES
+    lambda: |-
+      uint16_t value = modbus_controller::word_from_hex_str(x, 0);
+      switch (value) {
+        case 1: return std::string("self-inspection");
+        case 2: return std::string("running");
+        case 3: return std::string("warning");
+        case 4: return std::string("fault");
+        case 5: return std::string("manual stop");
+      }
+      return std::string("Unknown");
