@@ -76,6 +76,14 @@ sensor:
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
+    id: machine_type
+    name: ${device_name} Machine type
+    address: 0x1042
+    register_type: holding
+    value_type: U_WORD
+
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
     id: active_power_limit
     name: ${device_name} Active Power Limit
     address: 0x131E
@@ -115,30 +123,6 @@ sensor:
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
-    id: pv2_voltage
-    name: ${device_name} PV2 voltage
-    address: 0x1692
-    unit_of_measurement: "V"
-    register_type: holding
-    value_type: U_WORD
-    device_class: voltage
-    icon: mdi:flash
-    accuracy_decimals: 0
-
-  - platform: modbus_controller
-    modbus_controller_id: solar_inverter
-    id: pv2_current
-    name: ${device_name} PV2 current
-    address: 0x1693
-    unit_of_measurement: "A"
-    register_type: holding
-    value_type: U_WORD
-    device_class: current
-    icon: mdi:flash
-    accuracy_decimals: 1
-
-  - platform: modbus_controller
-    modbus_controller_id: solar_inverter
     id: grid_voltage
     name: "${device_name} Grid voltage phase U"
     address: 0x1698
@@ -162,6 +146,8 @@ sensor:
     device_class: current
     icon: mdi:flash
     accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
@@ -171,7 +157,9 @@ sensor:
     unit_of_measurement: "Hz"
     register_type: holding
     value_type: U_WORD
-    accuracy_decimals: 1
+    accuracy_decimals: 0
+    filters:
+      - multiply: 0.01
     skip_updates: $skip_updates_slow
 
   - platform: modbus_controller
@@ -182,7 +170,9 @@ sensor:
     unit_of_measurement: ""
     register_type: holding
     value_type: U_WORD
-    accuracy_decimals: 0
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.001
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
@@ -224,10 +214,12 @@ sensor:
     name: "${device_name} Energy total today"
     address: 0x1616
     register_type: holding
-    value_type: FP32
+    value_type: U_DWORD
     unit_of_measurement: kWh
     device_class: energy
-    accuracy_decimals: 1
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
     skip_updates: $skip_updates_slow
 
   - platform: modbus_controller
@@ -253,7 +245,7 @@ button:
         - lambda: |-
             modbus_controller::ModbusController *controller = id(solar_inverter);
             modbus_controller::ModbusCommandItem start =
-                modbus_controller::ModbusCommandItem::create_write_single_command(controller, 0x1400, 0xAAAA);
+                modbus_controller::ModbusCommandItem::create_write_single_command(controller, 0x1400, 0x5555);
             controller->queue_command(start);
 
   - platform: template
@@ -263,7 +255,7 @@ button:
         - lambda: |-
             modbus_controller::ModbusController *controller = id(solar_inverter);
             modbus_controller::ModbusCommandItem stop =
-                modbus_controller::ModbusCommandItem::create_write_single_command(controller, 0x1400, 0x5555);
+                modbus_controller::ModbusCommandItem::create_write_single_command(controller, 0x1400, 0xAAAA);
             controller->queue_command(stop);
 
 select:
@@ -310,11 +302,14 @@ text_sensor:
     raw_encode: HEXBYTES
     lambda: |-
       uint16_t value = modbus_controller::word_from_hex_str(x, 0);
+      value = value << 8;
+      ESP_LOGD("operational state value: ", "%d", value);
       switch (value) {
-        case 1: return std::string("self-inspection");
-        case 2: return std::string("running");
-        case 3: return std::string("warning");
-        case 4: return std::string("fault");
-        case 5: return std::string("manual stop");
+        case 15: return std::string("manual stop");
+        case 23: return std::string("fault");
+        case 27: return std::string("warning");
+        case 29: return std::string("running");
+        case 30: return std::string("self-inspection");
       }
-      return std::string("Unknown");
+      return to_string(value);
+    skip_updates: 5
