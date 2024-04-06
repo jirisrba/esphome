@@ -1,7 +1,7 @@
 # INVT IMARS MG5KTL - Single-Phase Grid Inverter 5kW with 2 MPPT
 
 substitutions:
-  device_name: invt-imars-mg5ktl
+  device_name: inverter
   friendly_name: INVT iMars MG5KTL
   skip_updates_slow: "6"  #how many times to skip normal update for slow updating sensors
 
@@ -68,30 +68,12 @@ modbus_controller:
     modbus_id: modbus_inverter
     setup_priority: -10
     update_interval: 10s
+    # command_throttle: 50ms
 
 sensor:
   - platform: wifi_signal
     name: ${device_name} Wifi RSSI
     update_interval: 60s
-
-  - platform: modbus_controller
-    modbus_controller_id: solar_inverter
-    id: machine_type
-    name: ${device_name} Machine type
-    address: 0x1042
-    register_type: holding
-    value_type: U_WORD
-
-  - platform: modbus_controller
-    modbus_controller_id: solar_inverter
-    id: active_power_limit
-    name: ${device_name} Active Power Limit
-    address: 0x131E
-    unit_of_measurement: "%"
-    register_type: holding
-    value_type: U_WORD
-    filters:
-      - multiply: 0.01
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
@@ -124,7 +106,7 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
     id: grid_voltage
-    name: "${device_name} Grid voltage phase U"
+    name: "${device_name} Grid voltage"
     address: 0x1698
     unit_of_measurement: "V"
     register_type: holding
@@ -138,7 +120,7 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
     id: grid_current
-    name: "${device_name} Grid current phase U"
+    name: "${device_name} Grid current"
     address: 0x1699
     unit_of_measurement: "A"
     register_type: holding
@@ -176,8 +158,8 @@ sensor:
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
-    id: pv_active_power
-    name: "${device_name} PV Active Power"
+    id: pv_power
+    name: "${device_name} PV Power"
     address: 0x16A2
     unit_of_measurement: "W"
     register_type: holding
@@ -186,8 +168,8 @@ sensor:
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
-    id: ac_output_active_power
-    name: "${device_name} AC output active power"
+    id: power
+    name: "${device_name} Power"
     address: 0x16A4
     unit_of_measurement: "W"
     register_type: holding
@@ -210,8 +192,8 @@ sensor:
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
-    id: energy_production_today
-    name: "${device_name} Energy total today"
+    id: energy_today
+    name: "${device_name} Energy today"
     address: 0x1616
     register_type: holding
     value_type: U_DWORD
@@ -261,10 +243,28 @@ button:
 select:
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
+    id: active_power_limit
+    name: ${device_name} Active Power Limit
+    address: 0x131E
+    value_type: U_WORD
+    use_write_multiple: true
+    optionsmap:
+      "100": 10000
+      "75": 7500
+      "50": 5000
+      "25": 2500
+      "10": 1000
+    lambda:
+      ESP_LOGD("active_power_limit", "Power Limit %lld", x);
+      return to_string(x / 100);
+
+  - platform: modbus_controller
+    modbus_controller_id: solar_inverter
     id: active_power_limit_mode
     name: "${device_name} Active power limit mode"
     address: 0x131F
     value_type: U_WORD
+    use_write_multiple: true
     optionsmap:
       "Disable": 0
       "Auto mode to 3.6kW": 1
@@ -279,19 +279,19 @@ text_sensor:
     register_type: holding
     raw_encode: HEXBYTES
 
-  - platform: modbus_controller
-    modbus_controller_id: solar_inverter
-    id: current_datetime
-    name: ${friendly_name} current datetime
-    address: 0x1678
-    register_type: holding
-    register_count: 4
-    lambda: |-
-      char buffer[20];
-      snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d %02d.%02d.%04d",
-        data[4], data[5], data[6], data[2], data[1], data[0] + 2000);
-      return {buffer};
-    skip_updates: 5
+  # - platform: modbus_controller
+  #   modbus_controller_id: solar_inverter
+  #   id: datetime
+  #   name: $device_name datetime
+  #   address: 0x1678
+  #   register_type: holding
+  #   register_count: 3
+  #   lambda: |-
+  #     char buffer[20];
+  #     snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d %02d.%02d.%04d",
+  #       data[4], data[5], data[6], data[2], data[1], data[0] + 2000);
+  #     return {buffer};
+  #   skip_updates: $skip_updates_slow
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
@@ -302,14 +302,12 @@ text_sensor:
     raw_encode: HEXBYTES
     lambda: |-
       uint16_t value = modbus_controller::word_from_hex_str(x, 0);
-      value = value << 8;
       ESP_LOGD("operational state value: ", "%d", value);
       switch (value) {
-        case 15: return std::string("manual stop");
-        case 23: return std::string("fault");
-        case 27: return std::string("warning");
-        case 29: return std::string("running");
-        case 30: return std::string("self-inspection");
+        case 1: return std::string("self-inspection");
+        case 2: return std::string("running");
+        case 3: return std::string("warning");
+        case 4: return std::string("fault");
+        case 5: return std::string("manual stop");
       }
       return to_string(value);
-    skip_updates: 5

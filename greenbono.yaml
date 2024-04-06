@@ -93,6 +93,14 @@ sensor:
     register_type: read
     value_type: U_WORD
 
+  - platform: template
+    id: last_valid_p1
+    name: ${friendly_name} LastValidP1
+    unit_of_measurement: "W"
+    lambda: |-
+      return id(last_valid_i1).state * id(last_valid_u1).state * -1;
+    update_interval: 60s
+
   - platform: modbus_controller
     modbus_controller_id: greenbono
     id: ssr1
@@ -200,6 +208,20 @@ text_sensor:
       char buffer[26];
       snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d %02d.%02d.%04d",
         data[3], data[0], data[1], data[7], data[6], (data[8] << 8 | data[9]) + 2000);
+      return {buffer};
+    skip_updates: 5
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: firmware_version
+    name: ${friendly_name} EEfwVersion
+    address: 34
+    raw_encode: HEXBYTES
+    register_type: holding
+    lambda: |-
+      char buffer[7];
+      uint16_t value = modbus_controller::word_from_hex_str(x, 0);
+      snprintf(buffer, sizeof(buffer), "%01d.%03d", value/1000, value % 1000);
       return {buffer};
     skip_updates: 5
 
