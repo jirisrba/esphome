@@ -73,11 +73,13 @@ sensor:
     update_interval: 60s
 
   - platform: modbus_controller
-    modbus_controller_id: greenbono
     id: last_valid_i1
+    modbus_controller_id: greenbono
     name: ${friendly_name} LastValidI1
     address: 8
     unit_of_measurement: "A"
+    device_class: current
+    icon: mdi:flash
     register_type: read
     value_type: S_WORD
     accuracy_decimals: 1
@@ -90,23 +92,28 @@ sensor:
     name: ${friendly_name} LastValidU1
     address: 16
     unit_of_measurement: "V"
+    device_class: voltage
+    icon: mdi:flash
     register_type: read
     value_type: U_WORD
 
   - platform: template
-    id: last_valid_p1
     name: ${friendly_name} LastValidP1
     unit_of_measurement: "W"
+    device_class: power
+    icon: mdi:transmission-tower
+    accuracy_decimals: 0
     lambda: |-
-      return id(last_valid_i1).state * id(last_valid_u1).state * -1;
+      return float(id(last_valid_i1).state * id(last_valid_u1).state * -1);
     update_interval: 60s
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
     id: ssr1
-    name: ${friendly_name} SSR
-    unit_of_measurement: "%"
+    name: ${friendly_name} SSR boiler
     address: 18
+    unit_of_measurement: "%"
+    icon: mdi:water-boiler
     register_type: read
     value_type: U_WORD
     bitmask: 0x00FF
@@ -117,23 +124,48 @@ sensor:
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
-    id: i_ssr1
     name: ${friendly_name} I_SSR1
     address: 26
     unit_of_measurement: "A"
     register_type: read
     value_type: S_WORD
-    accuracy_decimals: 1
+    accuracy_decimals: 0
     # filters:
     #   - multiply: 0.1
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
-    id: eessrlevelfork1on
+    name: ${friendly_name} I_NextRelais
+    address: 28
+    unit_of_measurement: "A"
+    register_type: read
+    value_type: S_WORD
+    accuracy_decimals: 0
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name} I_OneSec_SSR_On
+    address: 30
+    unit_of_measurement: "A"
+    register_type: read
+    value_type: S_WORD
+    accuracy_decimals: 0
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name} I_OneSec_SSR_Off
+    address: 32
+    unit_of_measurement: "A"
+    register_type: read
+    value_type: S_WORD
+    accuracy_decimals: 0
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
     name: ${friendly_name} SSR Level For K1 On
+    address: 108
     unit_of_measurement: "%"
     register_type: holding
-    address: 108
     bitmask: 0x00FF
     skip_updates: 5
     filters:
@@ -143,11 +175,23 @@ sensor:
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
-    id: eessrlevelfork2on
     name: ${friendly_name} SSR Level For K2 On
+    address: 110
     unit_of_measurement: "%"
     register_type: holding
-    address: 110
+    bitmask: 0x00FF
+    skip_updates: 5
+    filters:
+      - calibrate_linear:
+        - 0 -> 0
+        - 255 -> 100
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name} SSR Level For K3 On
+    address: 112
+    unit_of_measurement: "%"
+    register_type: holding
     bitmask: 0x00FF
     skip_updates: 5
     filters:
@@ -158,23 +202,22 @@ sensor:
 binary_sensor:
   - platform: modbus_controller
     modbus_controller_id: greenbono
-    id: k1_relay_status
-    name: ${friendly_name} K1 Relay Status
-    register_type: holding
+    name: ${friendly_name} Pool pump
     address: 10
+    icon: mdi:pump
+    register_type: holding
     bitmask: 0x0001
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
-    id: k2_relay_status
-    name: ${friendly_name} K2 Relay Status
-    register_type: holding
+    name: ${friendly_name} Pool heating
     address: 10
+    icon: mdi:heat-pump
+    register_type: holding
     bitmask: 0x0002
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
-    id: k3_relay_status
     name: ${friendly_name} K3 Relay Status
     register_type: holding
     address: 10
@@ -182,7 +225,6 @@ binary_sensor:
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
-    id: k4_relay_status
     name: ${friendly_name} K4 Relay Status
     register_type: holding
     address: 10
@@ -190,26 +232,24 @@ binary_sensor:
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
-    id: k5_relay_status
     name: ${friendly_name} K5 Relay Status
     register_type: holding
     address: 10
     bitmask: 0x0010
 
 text_sensor:
-  - platform: modbus_controller
-    modbus_controller_id: greenbono
-    id: t_datetime
-    name: ${friendly_name} t_datetime
-    address: 0
-    register_type: holding
-    register_count: 5
-    lambda: |-
-      char buffer[26];
-      snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d %02d.%02d.%04d",
-        data[3], data[0], data[1], data[7], data[6], (data[8] << 8 | data[9]) + 2000);
-      return {buffer};
-    skip_updates: 5
+  # - platform: modbus_controller
+  #   modbus_controller_id: greenbono
+  #   name: ${friendly_name} datetime
+  #   address: 0
+  #   register_type: holding
+  #   register_count: 5
+  #   lambda: |-
+  #     char buffer[26];
+  #     snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d %02d.%02d.%04d",
+  #       data[3], data[0], data[1], data[7], data[6], (data[8] << 8 | data[9]) + 2000);
+  #     return {buffer};
+  #   skip_updates: 5
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
@@ -227,9 +267,9 @@ text_sensor:
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
-    id: sh2starttime0
     name: ${friendly_name} SH2StartTime0
     address: 52
+    icon: mdi:clock-start
     register_type: holding
     lambda: |-
       int minute = data[0];
@@ -246,9 +286,9 @@ text_sensor:
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
-    id: sh2stoptime0
     name: ${friendly_name} SH2StopTime0
     address: 54
+    icon: mdi:clock-end
     register_type: holding
     lambda: |-
       int minute = data[0];

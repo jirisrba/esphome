@@ -1,7 +1,7 @@
 # INVT IMARS MG5KTL - Single-Phase Grid Inverter 5kW with 2 MPPT
 
 substitutions:
-  device_name: inverter
+  device_name: inverter #name for all sensors in Home assistant
   friendly_name: INVT iMars MG5KTL
   skip_updates_slow: "6"  #how many times to skip normal update for slow updating sensors
 
@@ -162,19 +162,22 @@ sensor:
     name: "${device_name} PV Power"
     address: 0x16A2
     unit_of_measurement: "W"
+    device_class: power
+    icon: mdi:solar-power-variant
     register_type: holding
     value_type: U_DWORD
-    device_class: power
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
     id: power
     name: "${device_name} Power"
     address: 0x16A4
-    unit_of_measurement: "W"
     register_type: holding
-    value_type: U_DWORD
+    unit_of_measurement: "W"
     device_class: power
+    icon: mdi:solar-power
+    value_type: U_DWORD
+    accuracy_decimals: 0
 
   - platform: modbus_controller
     id: temperature
@@ -199,6 +202,7 @@ sensor:
     value_type: U_DWORD
     unit_of_measurement: kWh
     device_class: energy
+    icon: mdi:solar-power
     accuracy_decimals: 2
     filters:
       - multiply: 0.01
@@ -211,9 +215,10 @@ sensor:
     address: 0x1652
     register_type: holding
     unit_of_measurement: kWh
-    value_type: U_DWORD
-    device_class: energy
     state_class: total_increasing
+    device_class: energy
+    icon: mdi:solar-power
+    value_type: U_DWORD
     accuracy_decimals: 1
     filters:
       - multiply: 0.01
@@ -227,7 +232,8 @@ button:
         - lambda: |-
             modbus_controller::ModbusController *controller = id(solar_inverter);
             modbus_controller::ModbusCommandItem start =
-                modbus_controller::ModbusCommandItem::create_write_single_command(controller, 0x1400, 0x5555);
+                modbus_controller::ModbusCommandItem::create_write_multiple_command(
+                    controller, 0x1400, 1, {uint16_t(0x5555)});
             controller->queue_command(start);
 
   - platform: template
@@ -237,7 +243,19 @@ button:
         - lambda: |-
             modbus_controller::ModbusController *controller = id(solar_inverter);
             modbus_controller::ModbusCommandItem stop =
-                modbus_controller::ModbusCommandItem::create_write_single_command(controller, 0x1400, 0xAAAA);
+                modbus_controller::ModbusCommandItem::create_write_multiple_command(
+                    controller, 0x1400, 1, {uint16_t(0xAAAA)});
+            controller->queue_command(stop);
+
+  - platform: template
+    name: ${device_name} reset
+    on_press:
+      then:
+        - lambda: |-
+            modbus_controller::ModbusController *controller = id(solar_inverter);
+            modbus_controller::ModbusCommandItem stop =
+                modbus_controller::ModbusCommandItem::create_write_multiple_command(
+                    controller, 0x1401, 1, {uint16_t(0xAAAA)});
             controller->queue_command(stop);
 
 select:
@@ -277,6 +295,8 @@ text_sensor:
     name: $device_name Fault code
     address: 0x1670
     register_type: holding
+    icon: mdi:eye
+    entity_category: diagnostic
     raw_encode: HEXBYTES
 
   # - platform: modbus_controller
@@ -299,6 +319,8 @@ text_sensor:
     name: $device_name operational state
     address: 0x167C
     register_type: holding
+    icon: mdi:eye
+    entity_category: diagnostic
     raw_encode: HEXBYTES
     lambda: |-
       uint16_t value = modbus_controller::word_from_hex_str(x, 0);
