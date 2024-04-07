@@ -4,6 +4,7 @@
 substitutions:
   friendly_name: Greenbono
   device_name: greenbono
+  max_boiler_power: "2200"
 
 <<: !include common.yaml
 <<: !include wifi-ufo8.yaml
@@ -105,7 +106,7 @@ sensor:
     accuracy_decimals: 0
     lambda: |-
       return float(id(last_valid_i1).state * id(last_valid_u1).state * -1);
-    update_interval: 60s
+    update_interval: 10s
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
@@ -122,43 +123,15 @@ sensor:
         - 0 -> 0
         - 255 -> 100
 
-  - platform: modbus_controller
-    modbus_controller_id: greenbono
-    name: ${friendly_name} I_SSR1
-    address: 26
-    unit_of_measurement: "A"
-    register_type: read
-    value_type: S_WORD
+  - platform: template
+    name: ${friendly_name} Boiler Power
+    unit_of_measurement: "W"
+    device_class: power
+    icon: mdi:water-boiler
     accuracy_decimals: 0
-    # filters:
-    #   - multiply: 0.1
-
-  - platform: modbus_controller
-    modbus_controller_id: greenbono
-    name: ${friendly_name} I_NextRelais
-    address: 28
-    unit_of_measurement: "A"
-    register_type: read
-    value_type: S_WORD
-    accuracy_decimals: 0
-
-  - platform: modbus_controller
-    modbus_controller_id: greenbono
-    name: ${friendly_name} I_OneSec_SSR_On
-    address: 30
-    unit_of_measurement: "A"
-    register_type: read
-    value_type: S_WORD
-    accuracy_decimals: 0
-
-  - platform: modbus_controller
-    modbus_controller_id: greenbono
-    name: ${friendly_name} I_OneSec_SSR_Off
-    address: 32
-    unit_of_measurement: "A"
-    register_type: read
-    value_type: S_WORD
-    accuracy_decimals: 0
+    lambda: |-
+      return float($max_boiler_power * id(ssr1).state / 100);
+    update_interval: 10s
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
@@ -202,7 +175,7 @@ sensor:
 binary_sensor:
   - platform: modbus_controller
     modbus_controller_id: greenbono
-    name: ${friendly_name} Pool pump
+    name: ${friendly_name} K1 Pool pump
     address: 10
     icon: mdi:pump
     register_type: holding
@@ -210,7 +183,7 @@ binary_sensor:
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
-    name: ${friendly_name} Pool heating
+    name: ${friendly_name} K2 Pool heating
     address: 10
     icon: mdi:heat-pump
     register_type: holding
