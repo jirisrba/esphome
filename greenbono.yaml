@@ -4,7 +4,6 @@
 substitutions:
   friendly_name: Greenbono
   device_name: greenbono
-  max_boiler_power: "2200"
 
 <<: !include common.yaml
 <<: !include wifi-ufo8.yaml
@@ -123,16 +122,6 @@ sensor:
         - 0 -> 0
         - 255 -> 100
 
-  - platform: template
-    name: ${friendly_name} Boiler Power
-    unit_of_measurement: "W"
-    device_class: power
-    icon: mdi:water-boiler
-    accuracy_decimals: 0
-    lambda: |-
-      return float($max_boiler_power * id(ssr1).state / 100);
-    update_interval: 10s
-
   - platform: modbus_controller
     modbus_controller_id: greenbono
     name: ${friendly_name} SSR Level For K1 On
@@ -144,7 +133,7 @@ sensor:
     filters:
       - calibrate_linear:
         - 0 -> 0
-        - 255 -> 100
+        - 255 -> 200
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
@@ -157,20 +146,7 @@ sensor:
     filters:
       - calibrate_linear:
         - 0 -> 0
-        - 255 -> 100
-
-  - platform: modbus_controller
-    modbus_controller_id: greenbono
-    name: ${friendly_name} SSR Level For K3 On
-    address: 112
-    unit_of_measurement: "%"
-    register_type: holding
-    bitmask: 0x00FF
-    skip_updates: 5
-    filters:
-      - calibrate_linear:
-        - 0 -> 0
-        - 255 -> 100
+        - 255 -> 200
 
 binary_sensor:
   - platform: modbus_controller
@@ -209,6 +185,45 @@ binary_sensor:
     register_type: holding
     address: 10
     bitmask: 0x0010
+
+select:
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name} SSR Level For K3 On
+    id: k3_ssr_level_on
+    address: 112
+    use_write_multiple: true
+    optionsmap:
+      "100": 255
+      "75": 191
+      "50": 127
+      "25": 63
+    value_type: U_WORD
+    lambda: |-
+      // SSR level is low byte value
+      uint16_t low_byte = x & 0x00FF;
+      ESP_LOGD("main", "K3 SSR level On %d", low_byte);
+      if (low_byte == 255)
+        return std::string("100");
+      if (low_byte == 191)
+        return std::string("75");
+      if (low_byte == 127)
+        return std::string("50");
+      if (low_byte == 63)
+        return std::string("25");
+      return {};
+    write_lambda: |-
+      ESP_LOGD("main","K3 SSR level On incoming value = %f", value);
+      payload.push_back(uint16_t(0xFF << 8 | value));
+
+      // confirmation packet
+      modbus_controller::ModbusController *controller = id(greenbono);
+      modbus_controller::ModbusCommandItem confirm =
+          modbus_controller::ModbusCommandItem::create_write_multiple_command(
+              controller, 0x4C, 1, {uint16_t(0x55AA)});
+      controller->queue_command(confirm);
+
+      return value;
 
 text_sensor:
   # - platform: modbus_controller
