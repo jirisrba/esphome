@@ -47,10 +47,7 @@ esp32:
   board: esp32doit-devkit-v1
 
 logger:
-  level: VERY_VERBOSE
-
-web_server:
-  port: 80
+  level: VERBOSE
 
 uart:
   id: mod_bus
@@ -68,7 +65,7 @@ modbus_controller:
     modbus_id: modbus_inverter
     setup_priority: -10
     update_interval: 10s
-    # command_throttle: 50ms
+    command_throttle: 50ms
 
 sensor:
   - platform: wifi_signal
@@ -266,27 +263,17 @@ select:
     address: 0x131E
     value_type: U_WORD
     use_write_multiple: true
+    # maximum power limit 5000 W = 100% = 10000 registry value
     optionsmap:
-      "100": 10000
-      "75": 7500
-      "50": 5000
-      "25": 2500
-      "10": 1000
+      "5000": 10000
+      "3680": 7360
+      "2400": 4800
+      "1400": 2800
+      "800": 1600
+      "500": 1000
     lambda:
       ESP_LOGD("active_power_limit", "Power Limit %lld", x);
-      return to_string(x / 100);
-
-  - platform: modbus_controller
-    modbus_controller_id: solar_inverter
-    id: active_power_limit_mode
-    name: "${device_name} Active power limit mode"
-    address: 0x131F
-    value_type: U_WORD
-    use_write_multiple: true
-    optionsmap:
-      "Disable": 0
-      "Auto mode to 3.6kW": 1
-      "Manual mode": 2
+      return to_string(x / 2);
 
 text_sensor:
   - platform: modbus_controller

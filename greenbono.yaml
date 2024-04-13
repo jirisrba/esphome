@@ -4,6 +4,7 @@
 substitutions:
   friendly_name: Greenbono
   device_name: greenbono
+  skip_updates_slow: "6"  #how many times to skip normal update for slow updating sensors
 
 <<: !include common.yaml
 <<: !include wifi-ufo8.yaml
@@ -64,7 +65,7 @@ modbus_controller:
   - id: greenbono
     address: 0x01
     modbus_id: modbus_greenbono
-    # command_throttle: 100ms
+    command_throttle: 100ms
     update_interval: 10s
 
 sensor:
@@ -124,12 +125,37 @@ sensor:
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
+    name: ${friendly_name} PI Kp
+    address: 30
+    register_type: holding
+    bitmask: 0x00FF
+    skip_updates: $skip_updates_slow
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name} PI Ki
+    address: 30
+    register_type: holding
+    bitmask: 0xFF00
+    skip_updates: $skip_updates_slow
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name} PI start level
+    address: 74
+    value_type: S_WORD
+    register_type: holding
+    bitmask: 0x00FF
+    skip_updates: $skip_updates_slow
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
     name: ${friendly_name} SSR Level For K1 On
     address: 108
     unit_of_measurement: "%"
     register_type: holding
     bitmask: 0x00FF
-    skip_updates: 5
+    skip_updates: $skip_updates_slow
     filters:
       - calibrate_linear:
         - 0 -> 0
@@ -142,7 +168,7 @@ sensor:
     unit_of_measurement: "%"
     register_type: holding
     bitmask: 0x00FF
-    skip_updates: 5
+    skip_updates: $skip_updates_slow
     filters:
       - calibrate_linear:
         - 0 -> 0
@@ -186,44 +212,66 @@ binary_sensor:
     address: 10
     bitmask: 0x0010
 
-select:
+number:
   - platform: modbus_controller
     modbus_controller_id: greenbono
-    name: ${friendly_name} SSR Level For K3 On
-    id: k3_ssr_level_on
-    address: 112
-    use_write_multiple: true
-    optionsmap:
-      "100": 255
-      "75": 191
-      "50": 127
-      "25": 63
+    name: ${friendly_name} SH2StartTime1 HH24
+    address: 56
     value_type: U_WORD
+    min_value: 0
+    max_value: 23
+    use_write_multiple: true
     lambda: |-
-      // SSR level is low byte value
-      uint16_t low_byte = x & 0x00FF;
-      ESP_LOGD("main", "K3 SSR level On %d", low_byte);
-      if (low_byte == 255)
-        return std::string("100");
-      if (low_byte == 191)
-        return std::string("75");
-      if (low_byte == 127)
-        return std::string("50");
-      if (low_byte == 63)
-        return std::string("25");
-      return {};
+      int hour = data[0];
+      int minute = data[1];
+      return hour;
     write_lambda: |-
-      ESP_LOGD("main","K3 SSR level On incoming value = %f", value);
-      payload.push_back(uint16_t(0xFF << 8 | value));
+      ESP_LOGD("main","Modbus Number incoming value = %f",x);
+      uint16_t hour = x * 256;
+      modbus_controller::ModbusController *controller = id(greenbono);
+      modbus_controller::ModbusCommandItem set_payload_command =
+          modbus_controller::ModbusCommandItem::create_write_multiple_command(
+            controller, 56, 1, {hour});
+      controller->queue_command(set_payload_command);
 
       // confirmation packet
-      modbus_controller::ModbusController *controller = id(greenbono);
       modbus_controller::ModbusCommandItem confirm =
           modbus_controller::ModbusCommandItem::create_write_multiple_command(
               controller, 0x4C, 1, {uint16_t(0x55AA)});
       controller->queue_command(confirm);
 
-      return value;
+      return {};
+    skip_updates: $skip_updates_slow
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name} SH2StopTime1 HH24
+    address: 58
+    value_type: U_WORD
+    min_value: 0
+    max_value: 23
+    use_write_multiple: true
+    lambda: |-
+      int hour = data[0];
+      int minute = data[1];
+      return hour;
+    write_lambda: |-
+      ESP_LOGD("main","Modbus Number incoming value = %f",x);
+      uint16_t hour = x * 258;
+      modbus_controller::ModbusController *controller = id(greenbono);
+      modbus_controller::ModbusCommandItem set_payload_command =
+          modbus_controller::ModbusCommandItem::create_write_multiple_command(
+            controller, 58, 1, {hour});
+      controller->queue_command(set_payload_command);
+
+      // confirmation packet
+      modbus_controller::ModbusCommandItem confirm =
+          modbus_controller::ModbusCommandItem::create_write_multiple_command(
+              controller, 0x4C, 1, {uint16_t(0x55AA)});
+      controller->queue_command(confirm);
+
+      return {};
+    skip_updates: $skip_updates_slow
 
 text_sensor:
   # - platform: modbus_controller
@@ -237,7 +285,7 @@ text_sensor:
   #     snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d %02d.%02d.%04d",
   #       data[3], data[0], data[1], data[7], data[6], (data[8] << 8 | data[9]) + 2000);
   #     return {buffer};
-  #   skip_updates: 5
+  #   skip_updates: $skip_updates_slow
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
@@ -251,17 +299,17 @@ text_sensor:
       uint16_t value = modbus_controller::word_from_hex_str(x, 0);
       snprintf(buffer, sizeof(buffer), "%01d.%03d", value/1000, value % 1000);
       return {buffer};
-    skip_updates: 5
+    skip_updates: $skip_updates_slow
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
-    name: ${friendly_name} SH2StartTime0
-    address: 52
+    name: ${friendly_name} SH2StartTime1
+    address: 56
     icon: mdi:clock-start
     register_type: holding
     lambda: |-
-      int minute = data[0];
-      int hour = data[1];
+      int minute = data[1];
+      int hour = data[0];
       if (hour != 255)
       {
         char buffer[8];
@@ -270,17 +318,17 @@ text_sensor:
       } else {
         return {"OFF"};
       }
-    skip_updates: 5
+    skip_updates: $skip_updates_slow
 
   - platform: modbus_controller
     modbus_controller_id: greenbono
-    name: ${friendly_name} SH2StopTime0
-    address: 54
+    name: ${friendly_name} SH2StopTime1
+    address: 58
     icon: mdi:clock-end
     register_type: holding
     lambda: |-
-      int minute = data[0];
-      int hour = data[1];
+      int minute = data[1];
+      int hour = data[0];
       if (hour != 255)
       {
         char buffer[8];
@@ -289,4 +337,4 @@ text_sensor:
       } else {
         return {"OFF"};
       }
-    skip_updates: 5
+    skip_updates: $skip_updates_slow
