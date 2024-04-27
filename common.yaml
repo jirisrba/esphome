@@ -2,13 +2,13 @@
 
 # change hostname => set use_address
 # wifi:
-  # ssid: !secret wifi_ssid
-  # password: !secret wifi_pass
+#   ssid: !secret wifi_ssid
+#   password: !secret wifi_pass
   # fast_connect: true
   # use_address: 192.168.4.1
 #   # use_address: sonoff-s20-02.local
   # manual_ip:
-  #   static_ip: 192.168.1.23
+  #   static_ip: 192.168.1.10
   #   gateway: 192.168.1.1
   #   subnet: 255.255.255.0
 
@@ -19,9 +19,9 @@
 #     - ssid: !secret wifi_ssid_ufo
 #       password: !secret wifi_pass_ufo
 
-#   # Enable fallback hotspot (captive portal) in case wifi connection fails
-#   ap:
-#     ssid: "${device_name}"
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  # ap:
+  #   ssid: "${device_name}"
 
 # fallback mechanism for when connecting to the configured WiFi fails
 captive_portal:
