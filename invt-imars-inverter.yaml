@@ -43,18 +43,18 @@ esphome:
             controller->queue_command(set_rtc_command);
           }
 
-esp32:
-  board: esp32doit-devkit-v1
+esp8266:
+  board: d1_mini_pro
 
 logger:
   level: VERBOSE
+  baud_rate: 0
 
 uart:
   id: mod_bus
-  tx_pin: GPIO17
-  rx_pin: GPIO16
+  tx_pin: GPIO01
+  rx_pin: GPIO03
   baud_rate: 9600
-  stop_bits: 1
 
 modbus:
   id: modbus_inverter
@@ -65,7 +65,6 @@ modbus_controller:
     modbus_id: modbus_inverter
     setup_priority: -10
     update_interval: 10s
-    command_throttle: 50ms
 
 sensor:
   - platform: wifi_signal
@@ -216,7 +215,7 @@ sensor:
     device_class: energy
     icon: mdi:solar-power
     value_type: U_DWORD
-    accuracy_decimals: 1
+    accuracy_decimals: 0
     filters:
       - multiply: 0.01
     skip_updates: $skip_updates_slow
@@ -255,25 +254,39 @@ button:
                     controller, 0x1401, 1, {uint16_t(0xAAAA)});
             controller->queue_command(stop);
 
-select:
+number:
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
     id: active_power_limit
     name: ${device_name} Active Power Limit
     address: 0x131E
-    value_type: U_WORD
+    min_value: 500
+    max_value: 3600
+    step: 100
     use_write_multiple: true
     # maximum power limit 5000 W = 100% = 10000 registry value
-    optionsmap:
-      "5000": 10000
-      "3680": 7360
-      "2400": 4800
-      "1400": 2800
-      "800": 1600
-      "500": 1000
-    lambda:
-      ESP_LOGD("active_power_limit", "Power Limit %lld", x);
-      return to_string(x / 2);
+    multiply: 2.0
+    # lambda: "return  x * 2.0; "
+
+# select:
+#   - platform: modbus_controller
+#     modbus_controller_id: solar_inverter
+#     id: active_power_limit
+#     name: ${device_name} Active Power Limit
+#     address: 0x131E
+#     value_type: U_WORD
+#     use_write_multiple: true
+#     # maximum power limit 5000 W = 100% = 10000 registry value
+#     optionsmap:
+#       "5000": 10000
+#       "3600": 7200
+#       "2400": 4800
+#       "1800": 3600
+#       "800": 1600
+#       "500": 1000
+#     lambda:
+#       ESP_LOGD("active_power_limit", "Power Limit %lld", x);
+#       return to_string(x / 2);
 
 text_sensor:
   - platform: modbus_controller
@@ -285,20 +298,6 @@ text_sensor:
     icon: mdi:eye
     entity_category: diagnostic
     raw_encode: HEXBYTES
-
-  # - platform: modbus_controller
-  #   modbus_controller_id: solar_inverter
-  #   id: datetime
-  #   name: $device_name datetime
-  #   address: 0x1678
-  #   register_type: holding
-  #   register_count: 3
-  #   lambda: |-
-  #     char buffer[20];
-  #     snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d %02d.%02d.%04d",
-  #       data[4], data[5], data[6], data[2], data[1], data[0] + 2000);
-  #     return {buffer};
-  #   skip_updates: $skip_updates_slow
 
   - platform: modbus_controller
     modbus_controller_id: solar_inverter
