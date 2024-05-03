@@ -1,7 +1,7 @@
 ---
 substitutions:
   device_name: tuya-to-q-sy2-jwt
-  friendly_name: Tuya TO-Q-SY2-JWT
+  friendly_name: Mycka
 
 esphome:
   name: ${device_name}
@@ -52,6 +52,7 @@ switch:
     optimistic: true
     internal: false #Hide - true \show - false
     restore_mode: RESTORE_DEFAULT_ON
+
   - platform: gpio
     pin:
       number: P24
@@ -130,6 +131,7 @@ binary_sensor:
     on_press:
       switch.toggle: relay
     internal: true
+
   - platform: template
     name: $friendly_name Relay State
     id: relaystate
@@ -150,28 +152,16 @@ output:
       mode:
         output: true
 
-text_sensor:
-  - platform: sun
-    name: Sunrise switch on
-    type: sunrise
-    elevation: -5°
-  - platform: sun
-    name: Sunset switch off
-    type: sunset
-    elevation: -5°
-
 sun:
   latitude: !secret latitude_semanovice
   longitude: !secret longitude_semanovice
 
-  # switch ON around 20 minutes before sunrise
-  on_sunrise:
-    - elevation: -5°
-      then:
-        - switch.turn_on: relay
+  # switch ON sunrise
+  # on_sunrise:
+  #   - then:
+  #       - switch.turn_on: relay
 
-  # switch OFF around 20 minutes after sunset
+  # switch OFF after sunset
   on_sunset:
-    - elevation: -5°
-      then:
+    - then:
         - switch.turn_off: relay
