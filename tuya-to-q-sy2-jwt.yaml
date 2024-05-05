@@ -5,10 +5,6 @@ substitutions:
 
 esphome:
   name: ${device_name}
-  on_boot:
-    priority: -100
-    then:
-      switch.turn_on: relay
 
 <<: !include common.yaml
 <<: !include wifi-ufo8.yaml
@@ -17,15 +13,15 @@ esphome:
 bk72xx:
   board: cbu
   framework:
-    version: dev
-    loglevel: debug
+    version: recommended
+    # loglevel: debug
 
 #Beken chips, unlike ESP, do not have an RTC memory for storing data. The settings are saved in flash memory every 10 minutes, not every time you change. If you need to shorten the time, then use the code below
 
 #https://github.com/libretiny-eu/libretiny/issues/75
 #https://github.com/libretiny-eu/libretiny/issues/41
-# preferences:
-#   flash_write_interval: 1min
+preferences:
+  flash_write_interval: 1min
 
 web_server:
   port: 80
@@ -106,7 +102,7 @@ sensor:
         multiply: -1
     energy:
       name: "$friendly_name Energy"
-      accuracy_decimals: 5
+      accuracy_decimals: 1
     frequency:
       name: "$friendly_name Frequency"
       accuracy_decimals: 2
