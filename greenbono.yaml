@@ -49,8 +49,12 @@ esp8266:
   board: d1_mini_pro
 
 logger:
-  level: VERBOSE
+  # level: VERBOSE
   baud_rate: 0
+
+one_wire:
+  - platform: gpio
+    pin: GPIO04
 
 uart:
   id: mod_bus
@@ -218,6 +222,10 @@ sensor:
       - calibrate_linear:
         - 0 -> 0
         - 255 -> 200
+
+  - platform: dallas_temp
+    name: $friendly_name pool temperature
+    address: 0x4e03159779154e28
 
 binary_sensor:
   - platform: modbus_controller

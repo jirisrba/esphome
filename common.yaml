@@ -57,6 +57,7 @@ api:
 
 # Make sure you can upload new firmware OTA
 ota:
+  platform: esphome
 
 # Sync time with Home Assistant
 time:

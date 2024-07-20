@@ -1,0 +1,16 @@
+---
+substitutions:
+  friendly_name: esp32-wroom-32d
+  device_name: esp32-wroom-32d
+
+<<: !include common.yaml
+<<: !include wifi-ufo8.yaml
+
+esphome:
+  name: $friendly_name
+
+esp32:
+  board: nodemcu-32s
+
+logger:
+  level: DEBUG
