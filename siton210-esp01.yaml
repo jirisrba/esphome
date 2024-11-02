@@ -2,16 +2,21 @@
 # source: https://github.com/TataGEEK/Siton210/blob/main/siton210.yaml
 
 substitutions:
-  device_name: "siton210" #název zařízení
-  updates: 10s #četnost aktualizací
-  adresa: "2" #ID meniče/adresa. Výchozí adresa Sitonu je 12 (0x0C)
-
+  device_name: "siton210" # název zařízení
+  updates: 60s # četnost aktualizací
 
 <<: !include common.yaml
 <<: !include wifi-ufo8.yaml
 
 esphome:
   name: $device_name
+  on_boot:
+    priority: -100
+    then:
+      # reconnect to solar AP
+      - delay: 60s
+      - wifi.disable
+      - wifi.enable
 
 esp8266:
   board: esp01_1m
