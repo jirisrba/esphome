@@ -2,14 +2,8 @@
 
 # change hostname => set use_address
 wifi:
-  networks:
-  - ssid: !secret wifi_ssid_ufo
-    password: !secret wifi_pass_ufo
-    bssid: !secret wifi_bssid_solar
-    priority: 10.0
-  - ssid: !secret wifi_ssid_ufo
-    password: !secret wifi_pass_ufo
-    priority: 0.0
+  ssid: !secret wifi_ssid_ufo
+  password: !secret wifi_pass_ufo
   # fast_connect: true
   # power_save_mode: none
   # output_power: 8.5dB

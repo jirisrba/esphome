@@ -1,10 +1,10 @@
 # common settings
 
 # change hostname => set use_address
-# wifi:
-#   ssid: !secret wifi_ssid
-#   password: !secret wifi_pass
-  # fast_connect: true
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_pass
+  fast_connect: true
   # use_address: 192.168.4.1
 #   # use_address: sonoff-s20-02.local
   # manual_ip:

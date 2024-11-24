@@ -14,8 +14,9 @@ esphome:
     priority: -100
     then:
       # reconnect to solar AP
-      - delay: 60s
+      - delay: 30s
       - wifi.disable
+      - delay: 1s
       - wifi.enable
 
 esp8266:

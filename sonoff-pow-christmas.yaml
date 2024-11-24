@@ -25,17 +25,6 @@ binary_sensor:
     on_press:
       - switch.toggle: relay
 
-sensor:
-  - platform: sht3xd
-    temperature:
-      id: sht31_temp
-      name: "${friendly_name} Temperature"
-    humidity:
-      id: sht31_humid
-      name: "${friendly_name} Humidity"
-    address: 0x44
-    update_interval: 60s
-
 switch:
   - platform: gpio
     name: $friendly_name
