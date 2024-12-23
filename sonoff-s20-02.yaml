@@ -7,8 +7,18 @@ esphome:
   name: ${device_name}
   platform: ESP8266
   board: esp01_1m
+  on_boot: # Set the initial state of the realy to ON
+    priority: 250.0 # Wait until WiFi is connected to allow the sensor some time to settle
+    then:
+      - switch.turn_on: relay
 
 <<: !include common.yaml
+<<: !include wifi-ufo8.yaml
+
+sensor:
+  - platform: wifi_signal
+    name: ${device_name} Wifi RSSI
+    update_interval: 60s
 
 binary_sensor:
   - platform: gpio

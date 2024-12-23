@@ -13,6 +13,12 @@ esphome:
       - switch.turn_on: relay
 
 <<: !include common.yaml
+<<: !include wifi-ufo8.yaml
+
+sensor:
+  - platform: wifi_signal
+    name: ${device_name} Wifi RSSI
+    update_interval: 60s
 
 binary_sensor:
   - platform: gpio
@@ -44,7 +50,7 @@ time:
         then:
           - switch.turn_on: relay
 
-      # OFF Every evening
+      # switch OFF Every evening
       - seconds: 00
         minutes: 00
         hours: 23
