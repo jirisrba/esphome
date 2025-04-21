@@ -1,0 +1,27 @@
+---
+substitutions:
+  device_name: tuya-smart-plug-01
+  friendly_name: tuya-smart-plug-01
+
+esphome:
+  name: ${device_name}
+
+<<: !include common.yaml
+<<: !include wifi-cakovice.yaml
+
+# CBU Wi-Fi Module https://docs.libretiny.eu/boards/cbu/
+bk72xx:
+  board: generic-bk7231n-qfn32-tuya
+
+# Beken chips, unlike ESP, do not have an RTC memory for storing data. The settings are saved in flash memory every 10 minutes, not every time you change. If you need to shorten the time, then use the code below
+
+# https://github.com/libretiny-eu/libretiny/issues/75
+# https://github.com/libretiny-eu/libretiny/issues/41
+# preferences:
+#   flash_write_interval: 1min
+
+web_server:
+  port: 80
+
+# Enable logging
+logger:

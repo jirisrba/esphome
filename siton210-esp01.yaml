@@ -2,7 +2,8 @@
 # source: https://github.com/TataGEEK/Siton210/blob/main/siton210.yaml
 
 substitutions:
-  device_name: "siton210" # název zařízení
+  device_name: "siton210"
+  friendly_name: Siton 210
   updates: 60s # četnost aktualizací
 
 <<: !include common.yaml
@@ -10,6 +11,7 @@ substitutions:
 
 esphome:
   name: $device_name
+  friendly_name: ${friendly_name}
   on_boot:
     priority: -100
     then:
@@ -96,6 +98,6 @@ sensor:
       - multiply: 0.001
 
   - platform: wifi_signal
-    name: "${device_name} WiFi Signal"
+    name: "${device_name} WiFi Signal Strength"
     entity_category: diagnostic
     update_interval: 60s
