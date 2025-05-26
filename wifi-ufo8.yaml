@@ -7,7 +7,7 @@ wifi:
   fast_connect: true
   # power_save_mode: none
   # output_power: 8.5dB
-  # use_address: 192.168.2.10
+  # use_address: 192.168.2.50
   # use_address: sonoff-s20-02.local
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails

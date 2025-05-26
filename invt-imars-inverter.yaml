@@ -261,7 +261,7 @@ number:
     name: ${device_name} Active Power Limit
     address: 0x131E
     min_value: 500
-    max_value: 3600
+    max_value: 3000
     step: 100
     use_write_multiple: true
     # maximum power limit 5000 W = 100% = 10000 registry value

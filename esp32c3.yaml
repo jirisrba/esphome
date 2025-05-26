@@ -16,7 +16,23 @@ esp32:
   board: esp32-c3-devkitm-1
   variant: ESP32C3
   framework:
-    type: esp-idf
+    type: arduino
 
 logger:
   level: DEBUG
+
+uart:
+  id: mod_bus
+  tx_pin: GPIO21
+  rx_pin: GPIO20
+  baud_rate: 9600
+
+light:
+  - platform: status_led
+    name: "Status LED"
+    id: esp_status_led
+    icon: "mdi:alarm-light"
+    pin:
+      number: GPIO8
+      inverted: true
+    restore_mode: ALWAYS_OFF
