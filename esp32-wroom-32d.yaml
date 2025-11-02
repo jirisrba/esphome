@@ -10,7 +10,10 @@ esphome:
   name: $friendly_name
 
 esp32:
-  board: nodemcu-32s
+  board: esp32dev
+  framework:
+    type: arduino
+  # board: nodemcu-32s
 
 logger:
   level: DEBUG
