@@ -1,0 +1,829 @@
+# Growatt SPF 6000ES Plus + GBO-Aku on shared RS485 bus
+# Hardware: ESP8266 D1 Mini Pro, MAX485 transceiver
+#
+# MAX485 wiring:
+#   DI  → GPIO01 (TX)
+#   RO  → GPIO03 (RX)
+#   A/B → RS485 bus (Growatt 0x02, GBO-Aku 0x03)
+#
+# Dallas DS18B20 → GPIO4
+
+substitutions:
+  friendly_name_growatt: Growatt
+  friendly_name_gbo: Greenbono
+  device_name: solar-modbus
+  skip_updates_slow: "6"
+
+<<: !include common.yaml
+<<: !include wifi-ufo8.yaml
+
+esphome:
+  name: $device_name
+  on_boot:
+    priority: -100
+    then:
+      - delay: 60s
+      - lambda: |-
+          time_t now = ::time(nullptr);
+          struct tm *time_info = ::localtime(&now);
+          int second = time_info->tm_sec;
+          int minute = time_info->tm_min;
+          int hour   = time_info->tm_hour;
+          int wday   = time_info->tm_wday;
+          int day    = time_info->tm_mday;
+          int month  = time_info->tm_mon + 1;
+          int year   = time_info->tm_year % 100;
+
+          // Only sync when NTP time is valid (year != 70 means not stuck at epoch 1970)
+          if (year == 70) return;
+
+          // ---- Sync RTC in GBO-Aku on boot ----
+          esphome::modbus_controller::ModbusController *gbo = id(greenbono);
+          std::vector<uint16_t> rtc_gbo = {
+            uint16_t((minute << 8) | second),
+            uint16_t((wday   << 8) | hour),
+            0x0955,
+            uint16_t((month  << 8) | day),
+            uint16_t(year)
+          };
+          ESP_LOGI("RTC", "GBO RTC sync: %02d:%02d:%02d %02d.%02d.20%02d",
+                   hour, minute, second, day, month, year);
+          gbo->queue_command(
+            esphome::modbus_controller::ModbusCommandItem::create_write_multiple_command(
+              gbo, 0x0, rtc_gbo.size(), rtc_gbo));
+
+          // ---- Sync RTC in Growatt SPF on boot ----
+          // Holding registers 45..50: year(2-digit), month, day, hour, minute, second
+          esphome::modbus_controller::ModbusController *gwt = id(growatt);
+          std::vector<uint16_t> rtc_gwt = {
+            uint16_t(year), uint16_t(month),  uint16_t(day),
+            uint16_t(hour), uint16_t(minute), uint16_t(second)
+          };
+          ESP_LOGI("RTC", "Growatt RTC sync: %02d:%02d:%02d %02d.%02d.20%02d",
+                   hour, minute, second, day, month, year);
+          gwt->queue_command(
+            esphome::modbus_controller::ModbusCommandItem::create_write_multiple_command(
+              gwt, 45, rtc_gwt.size(), rtc_gwt));
+
+esp8266:
+  board: d1_mini_pro
+
+logger:
+  # level: VERBOSE
+  baud_rate: 0
+
+one_wire:
+  - platform: gpio
+    pin: GPIO4
+
+uart:
+  id: mod_bus
+  tx_pin: GPIO01
+  rx_pin: GPIO03
+  baud_rate: 9600
+  stop_bits: 1
+  parity: NONE
+  data_bits: 8
+
+modbus:
+  id: modbus_bus
+  uart_id: mod_bus
+
+modbus_controller:
+  # ============================================================
+  # Growatt SPF 6000ES Plus — address 0x02
+  # ============================================================
+  - id: growatt
+    address: 0x02
+    modbus_id: modbus_bus
+    setup_priority: -10
+    command_throttle: 100ms
+    update_interval: 10s
+
+  # ============================================================
+  # GBO-Aku — address 0x03
+  # ============================================================
+  - id: greenbono
+    address: 0x03
+    modbus_id: modbus_bus
+    setup_priority: -10
+    command_throttle: 50ms
+    update_interval: 10s
+
+# ============================================================
+# SENSORS — Growatt SPF 6000ES Plus
+# Register map: custom_components/growatt_modbus/profiles/spf.py
+#   from github.com/0xAHA/Growatt_ModbusTCP
+# Input registers = register_type: read (FC4)
+# ============================================================
+sensor:
+
+  # --- PV input ---
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} PV1 Voltage
+    address: 1
+    register_type: read
+    unit_of_measurement: "V"
+    device_class: voltage
+    state_class: measurement
+    value_type: U_WORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} PV1 Current
+    address: 7
+    register_type: read
+    unit_of_measurement: "A"
+    device_class: current
+    state_class: measurement
+    value_type: U_WORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} PV1 Power
+    address: 3
+    register_type: read
+    unit_of_measurement: "W"
+    device_class: power
+    state_class: measurement
+    value_type: U_DWORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} PV2 Voltage
+    address: 2
+    register_type: read
+    unit_of_measurement: "V"
+    device_class: voltage
+    state_class: measurement
+    value_type: U_WORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} PV2 Current
+    address: 8
+    register_type: read
+    unit_of_measurement: "A"
+    device_class: current
+    state_class: measurement
+    value_type: U_WORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} PV2 Power
+    address: 5
+    register_type: read
+    unit_of_measurement: "W"
+    device_class: power
+    state_class: measurement
+    value_type: U_DWORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  # --- AC input (grid / generator) ---
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Grid Voltage
+    address: 20
+    register_type: read
+    unit_of_measurement: "V"
+    device_class: voltage
+    state_class: measurement
+    value_type: U_WORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Grid Frequency
+    address: 21
+    register_type: read
+    unit_of_measurement: "Hz"
+    device_class: frequency
+    state_class: measurement
+    value_type: U_WORD
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} AC Input Power
+    address: 36
+    register_type: read
+    unit_of_measurement: "W"
+    device_class: power
+    state_class: measurement
+    value_type: U_DWORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  # --- AC output (load) ---
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Load Power
+    address: 9
+    register_type: read
+    unit_of_measurement: "W"
+    device_class: power
+    state_class: measurement
+    value_type: U_DWORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} AC Voltage
+    address: 22
+    register_type: read
+    unit_of_measurement: "V"
+    device_class: voltage
+    state_class: measurement
+    value_type: U_WORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  # --- Battery ---
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Battery Voltage
+    address: 17
+    register_type: read
+    unit_of_measurement: "V"
+    device_class: voltage
+    state_class: measurement
+    value_type: U_WORD
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Battery SOC
+    address: 18
+    register_type: read
+    unit_of_measurement: "%"
+    device_class: battery
+    state_class: measurement
+    value_type: U_WORD
+
+  # SPF hardware sign convention is INVERTED vs HA standard:
+  #   SPF: positive = discharge, negative = charge
+  # multiply: -0.1 flips it to HA standard: positive = charge, negative = discharge
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Battery Power
+    address: 77
+    register_type: read
+    unit_of_measurement: "W"
+    device_class: power
+    state_class: measurement
+    value_type: S_DWORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: -0.1
+
+  # TotalChgCur — total charge current (PV + AC), input reg 83, scale 0.1A
+  # Note: reg 68 (battery_current) only works during AC charging.
+  # Reg 83 works for PV charging too, but shows 0 during discharge.
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    id: growatt_battery_charge_current
+    name: ${friendly_name_growatt} Battery Total Charge Current
+    address: 83
+    register_type: read
+    unit_of_measurement: "A"
+    device_class: current
+    state_class: measurement
+    value_type: U_WORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Battery Discharge Energy Today
+    address: 60
+    register_type: read
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    value_type: U_DWORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Battery Discharge Energy Total
+    address: 62
+    register_type: read
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    value_type: U_DWORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  # --- Temperatures ---
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Inverter Temperature
+    address: 25
+    register_type: read
+    unit_of_measurement: "°C"
+    device_class: temperature
+    state_class: measurement
+    value_type: S_WORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} DCDC Temperature
+    address: 26
+    register_type: read
+    unit_of_measurement: "°C"
+    device_class: temperature
+    state_class: measurement
+    value_type: S_WORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  # --- PV energy counters ---
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} PV Energy Today
+    address: 48
+    register_type: read
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    value_type: U_DWORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} PV Energy Total
+    address: 50
+    register_type: read
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    value_type: U_DWORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  # --- Fault / warning codes (diagnostic) ---
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Fault Code
+    address: 42
+    register_type: read
+    entity_category: diagnostic
+    value_type: U_WORD
+    skip_updates: $skip_updates_slow
+
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Warning Code
+    address: 43
+    register_type: read
+    entity_category: diagnostic
+    value_type: U_WORD
+    skip_updates: $skip_updates_slow
+
+  # --- WiFi signal ---
+  - platform: wifi_signal
+    name: ${friendly_name_growatt} Wifi RSSI
+    update_interval: 60s
+
+# ============================================================
+# GBO-Aku
+# https://www.yorix.cz/cz/greenbono/gbo-aku.htm
+# Input registers (FC4) unless noted as holding (FC3)
+# ============================================================
+
+  # --- Battery (read from GBO internal sensors) ---
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: last_valid_udc
+    name: ${friendly_name_gbo} Battery Voltage
+    address: 74
+    unit_of_measurement: "V"
+    device_class: voltage
+    state_class: measurement
+    icon: mdi:battery
+    register_type: read
+    value_type: U_WORD
+    accuracy_decimals: 2
+    filters:
+      - multiply: 0.01
+
+  # OutPI_Udc — internal PI regulator output for battery voltage control (0-255 raw, dimensionless)
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: out_pi_udc
+    name: ${friendly_name_gbo} Battery PI Regulator Output
+    address: 76
+    state_class: measurement
+    icon: mdi:battery-charging
+    register_type: read
+    value_type: S_WORD
+    accuracy_decimals: 0
+    entity_category: diagnostic
+
+  # LastValidI1 — calibrated grid current on phase L1 [deciAmperes], signed
+  # Negative = export (surplus flowing back), positive = import
+  - platform: modbus_controller
+    id: last_valid_i1
+    modbus_controller_id: greenbono
+    name: ${friendly_name_gbo} Grid Current L1
+    address: 8
+    unit_of_measurement: "A"
+    device_class: current
+    state_class: measurement
+    icon: mdi:flash
+    register_type: read
+    value_type: S_WORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
+  # LastValidU1 — calibrated grid voltage on phase L1 (raw calibrated units, scale depends on KK_U1)
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: last_valid_u1
+    name: ${friendly_name_gbo} Grid Voltage L1
+    address: 16
+    unit_of_measurement: "V"
+    device_class: voltage
+    state_class: measurement
+    icon: mdi:flash
+    register_type: read
+    value_type: U_WORD
+
+  # Grid power on L1 calculated from I×U (positive = import, negative = export/surplus)
+  - platform: template
+    name: ${friendly_name_gbo} Grid Power L1
+    unit_of_measurement: "W"
+    device_class: power
+    state_class: measurement
+    icon: mdi:transmission-tower
+    accuracy_decimals: 0
+    lambda: |-
+      return float(id(last_valid_i1).state * id(last_valid_u1).state * -1);
+    update_interval: 10s
+
+  # OutputPI — PI regulator output controlling SSR boiler PWM (0-255 raw → 0-300%)
+  # 3 SSR relays in cascade: 255 = all 3 SSRs at full power = 300% rated boiler power
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: ssr1
+    name: ${friendly_name_gbo} SSR Boiler Output
+    address: 18
+    unit_of_measurement: "%"
+    state_class: measurement
+    icon: mdi:water-boiler
+    register_type: read
+    value_type: U_WORD
+    bitmask: 0x00FF
+    filters:
+      - calibrate_linear:
+        - 0 -> 0
+        - 255 -> 300
+
+  # --- Holding registers (FC3) — configuration & status ---
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name_gbo} Relay Config
+    address: 60
+    register_type: holding
+    entity_category: diagnostic
+    skip_updates: $skip_updates_slow
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name_gbo} Relay Timeout Switch Off
+    address: 72
+    value_type: S_WORD
+    register_type: holding
+    unit_of_measurement: "s"
+    entity_category: diagnostic
+    bitmask: 0x00FF
+    skip_updates: $skip_updates_slow
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name_gbo} Relay Timeout Switch On
+    address: 72
+    value_type: S_WORD
+    register_type: holding
+    unit_of_measurement: "s"
+    entity_category: diagnostic
+    bitmask: 0xFF00
+    skip_updates: $skip_updates_slow
+
+  # PI_StartLevel — minimum surplus on L1 (raw ADC digits) to start PI regulation
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name_gbo} PI Start Level
+    address: 74
+    value_type: S_WORD
+    register_type: holding
+    entity_category: diagnostic
+    bitmask: 0x00FF
+    skip_updates: $skip_updates_slow
+
+  # EESSRLevelForK1/K2/K3On — SSR output level [%] threshold to switch relay on
+  # 2 relays in cascade: 255 = both relays on = 200% rated load
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name_gbo} SSR Level For K1 On
+    address: 108
+    unit_of_measurement: "%"
+    register_type: holding
+    bitmask: 0x00FF
+    skip_updates: $skip_updates_slow
+    filters:
+      - calibrate_linear:
+        - 0 -> 0
+        - 255 -> 200
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name_gbo} SSR Level For K2 On
+    address: 110
+    unit_of_measurement: "%"
+    register_type: holding
+    bitmask: 0x00FF
+    skip_updates: $skip_updates_slow
+    filters:
+      - calibrate_linear:
+        - 0 -> 0
+        - 255 -> 200
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name_gbo} SSR Level For K3 On
+    address: 112
+    unit_of_measurement: "%"
+    register_type: holding
+    bitmask: 0x00FF
+    skip_updates: $skip_updates_slow
+    filters:
+      - calibrate_linear:
+        - 0 -> 0
+        - 255 -> 200
+
+  # Dallas DS18B20 — pool temperature sensor
+  - platform: dallas_temp
+    name: ${friendly_name_gbo} Pool Temperature
+    address: 0x4e03159779154e28
+    device_class: temperature
+    state_class: measurement
+
+binary_sensor:
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: k1
+    name: ${friendly_name_gbo} K1 Pool pump
+    address: 10
+    icon: mdi:pump
+    register_type: holding
+    bitmask: 0x0001
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: k2
+    name: ${friendly_name_gbo} K2 Pool heating
+    address: 10
+    icon: mdi:heat-pump
+    register_type: holding
+    bitmask: 0x0002
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: k3
+    name: ${friendly_name_gbo} K3 Relay Status
+    register_type: holding
+    address: 10
+    bitmask: 0x0004
+
+  # Grid present = any non-zero voltage on AC input (reg 20)
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Grid Connected
+    address: 20
+    register_type: read
+    device_class: plug
+    bitmask: 0xFFFF
+
+number:
+  # Active power rate — limit inverter output power (0-100%), holding reg 3 (FC3/FC16)
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Active Power Rate
+    address: 3
+    register_type: holding
+    value_type: U_WORD
+    unit_of_measurement: "%"
+    icon: mdi:sine-wave
+    min_value: 0
+    max_value: 100
+    step: 1
+    use_write_multiple: true
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: sh2starttime1hh24
+    name: ${friendly_name_gbo} SH2 Start Time1 HH24
+    address: 56
+    use_write_multiple: true
+    value_type: U_WORD
+    min_value: 0
+    max_value: 23
+    lambda: |-
+      int hour = data[0];
+      int minute = data[1];
+      return hour;
+    write_lambda: |-
+      ESP_LOGD("main","Modbus Number incoming value = %f",x);
+      uint8_t hour = x;
+      modbus_controller::ModbusController *controller = id(greenbono);
+      modbus_controller::ModbusCommandItem set_payload_command =
+          modbus_controller::ModbusCommandItem::create_write_multiple_command(
+            controller, 56, 1, {uint16_t(hour << 8 | 0x00)});
+      controller->queue_command(set_payload_command);
+      modbus_controller::ModbusCommandItem confirm =
+          modbus_controller::ModbusCommandItem::create_write_multiple_command(
+              controller, 76, 1, {uint16_t(0x55AA)});
+      controller->queue_command(confirm);
+      return {};
+    skip_updates: $skip_updates_slow
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: sh2stoptime1hh24
+    name: ${friendly_name_gbo} SH2 Stop Time1 HH24
+    address: 58
+    use_write_multiple: true
+    value_type: U_WORD
+    min_value: 0
+    max_value: 23
+    lambda: |-
+      int hour = data[0];
+      int minute = data[1];
+      return hour;
+    write_lambda: |-
+      ESP_LOGD("main","Modbus Number incoming value = %f",x);
+      uint8_t hour = x;
+      modbus_controller::ModbusController *controller = id(greenbono);
+      modbus_controller::ModbusCommandItem set_payload_command =
+          modbus_controller::ModbusCommandItem::create_write_multiple_command(
+            controller, 58, 1, {uint16_t(hour << 8 | 0x00)});
+      controller->queue_command(set_payload_command);
+      modbus_controller::ModbusCommandItem confirm =
+          modbus_controller::ModbusCommandItem::create_write_multiple_command(
+              controller, 76, 1, {uint16_t(0x55AA)});
+      controller->queue_command(confirm);
+      return {};
+    skip_updates: $skip_updates_slow
+
+switch:
+  # Growatt SPF on/off — holding register 0: 0=Off, 1=On (FC16)
+  # WARNING: turns off the inverter including load output — use with caution!
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Inverter Power
+    address: 0
+    register_type: holding
+    icon: mdi:power
+
+  - platform: template
+    name: ${friendly_name_gbo} Pool Pump always on
+    lambda: |-
+      if (id(sh2stoptime1hh24).state > 0) {
+        return true;
+      } else {
+        return false;
+      }
+    turn_on_action:
+      - number.set:
+          id: sh2starttime1hh24
+          value: 0
+      - number.set:
+          id: sh2stoptime1hh24
+          value: 20
+    turn_off_action:
+      - number.set:
+          id: sh2starttime1hh24
+          value: 0
+      - number.set:
+          id: sh2stoptime1hh24
+          value: 0
+
+text_sensor:
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    id: firmware_version
+    name: ${friendly_name_gbo} EEfwVersion
+    address: 34
+    raw_encode: HEXBYTES
+    register_type: holding
+    lambda: |-
+      char buffer[7];
+      uint16_t value = modbus_controller::word_from_hex_str(x, 0);
+      snprintf(buffer, sizeof(buffer), "%01d.%03d", value/1000, value % 1000);
+      return {buffer};
+    skip_updates: $skip_updates_slow
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name_gbo} SH2 start time 2 interval
+    address: 56
+    icon: mdi:clock-start
+    register_type: holding
+    lambda: |-
+      int minute = data[1];
+      int hour = data[0];
+      if (hour != 255) {
+        char buffer[8];
+        snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
+        return {buffer};
+      } else {
+        return {"OFF"};
+      }
+    skip_updates: $skip_updates_slow
+
+  - platform: modbus_controller
+    modbus_controller_id: greenbono
+    name: ${friendly_name_gbo} SH2 stop time 2 interval
+    address: 58
+    icon: mdi:clock-end
+    register_type: holding
+    lambda: |-
+      int minute = data[1];
+      int hour = data[0];
+      if (hour != 255) {
+        char buffer[8];
+        snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
+        return {buffer};
+      } else {
+        return {"OFF"};
+      }
+    skip_updates: $skip_updates_slow
+
+  # Growatt inverter status as text (input reg 0)
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Inverter Status
+    address: 0
+    register_type: read
+    raw_encode: HEXBYTES
+    lambda: |-
+      uint16_t value = modbus_controller::word_from_hex_str(x, 0);
+      switch (value) {
+        case 0:  return {"Standby"};
+        case 1:  return {"No Use"};
+        case 2:  return {"Discharge"};
+        case 3:  return {"Fault"};
+        case 4:  return {"Flash"};
+        case 5:  return {"PV Charge"};
+        case 6:  return {"AC Charge"};
+        case 7:  return {"Combine Charge"};
+        case 8:  return {"Combine Charge+Bypass"};
+        case 9:  return {"PV Charge+Bypass"};
+        case 10: return {"AC Charge+Bypass"};
+        case 11: return {"Bypass"};
+        case 12: return {"PV Charge+Discharge"};
+        default: return {"Unknown"};
+      }
+    skip_updates: $skip_updates_slow
