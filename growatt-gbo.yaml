@@ -108,7 +108,7 @@ modbus_controller:
     modbus_id: modbus_bus
     setup_priority: -10
     command_throttle: 50ms
-    update_interval: 10s
+    update_interval: 30s
 
 # ============================================================
 # SENSORS — Growatt SPF 6000ES Plus
@@ -280,6 +280,7 @@ sensor:
 
   - platform: modbus_controller
     modbus_controller_id: growatt
+    id: growatt_battery_soc
     name: ${friendly_name_growatt} Battery SOC
     address: 18
     register_type: read
@@ -293,6 +294,7 @@ sensor:
   # multiply: -0.1 flips it to HA standard: positive = charge, negative = discharge
   - platform: modbus_controller
     modbus_controller_id: growatt
+    id: growatt_battery_power
     name: ${friendly_name_growatt} Battery Power
     address: 77
     register_type: read
@@ -374,6 +376,21 @@ sensor:
     filters:
       - multiply: 0.1
 
+  # --- Grid / AC input energy ---
+  # AC charge energy today — energy imported from grid for battery charging (input reg 56-57)
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Grid Import Energy Today
+    address: 56
+    register_type: read
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    value_type: U_DWORD
+    accuracy_decimals: 1
+    filters:
+      - multiply: 0.1
+
   # --- PV energy counters ---
   - platform: modbus_controller
     modbus_controller_id: growatt
@@ -401,6 +418,22 @@ sensor:
     filters:
       - multiply: 0.1
 
+  # --- Battery config (holding registers, diagnostic) ---
+  # bat_low_to_uti: SOC threshold to switch from battery to utility (holding reg 37)
+  # Lithium battery: value in 0.1% (e.g. 200 = 20.0%) — use this for shutdown_soc in sunsynk card
+  - platform: modbus_controller
+    modbus_controller_id: growatt
+    name: ${friendly_name_growatt} Battery Low to Utility
+    address: 37
+    register_type: holding
+    value_type: U_WORD
+    unit_of_measurement: "%"
+    accuracy_decimals: 1
+    entity_category: diagnostic
+    skip_updates: $skip_updates_slow
+    filters:
+      - multiply: 0.1
+
   # --- Fault / warning codes (diagnostic) ---
   - platform: modbus_controller
     modbus_controller_id: growatt
@@ -425,27 +458,33 @@ sensor:
     name: ${friendly_name_growatt} Wifi RSSI
     update_interval: 60s
 
+  # Dallas DS18B20 — pool temperature sensor (on ESP GPIO, not Modbus)
+  - platform: dallas_temp
+    name: ${friendly_name_gbo} Pool Temperature
+    address: 0x4e03159779154e28
+    device_class: temperature
+    state_class: measurement
+
 # ============================================================
-# GBO-Aku
+# GBO-Aku sensors
 # https://www.yorix.cz/cz/greenbono/gbo-aku.htm
 # Input registers (FC4) unless noted as holding (FC3)
 # ============================================================
 
-  # --- Battery (read from GBO internal sensors) ---
+  # LastValidUdc — FC4 reg 74: SOC value read from Growatt via ExternControl (0-100%)
+  # Note: this is NOT battery voltage — GBO reads SOC from Growatt reg 0x0012 via ExternControl
   - platform: modbus_controller
     modbus_controller_id: greenbono
     id: last_valid_udc
-    name: ${friendly_name_gbo} Battery Voltage
+    name: ${friendly_name_gbo} Battery SOC (ExternCtrl)
     address: 74
-    unit_of_measurement: "V"
-    device_class: voltage
+    unit_of_measurement: "%"
+    device_class: battery
     state_class: measurement
     icon: mdi:battery
     register_type: read
     value_type: U_WORD
-    accuracy_decimals: 2
-    filters:
-      - multiply: 0.01
+    accuracy_decimals: 0
 
   # OutPI_Udc — internal PI regulator output for battery voltage control (0-255 raw, dimensionless)
   - platform: modbus_controller
@@ -477,7 +516,7 @@ sensor:
     filters:
       - multiply: 0.1
 
-  # LastValidU1 — calibrated grid voltage on phase L1 (raw calibrated units, scale depends on KK_U1)
+  # LastValidU1 — calibrated grid voltage on phase L1
   - platform: modbus_controller
     modbus_controller_id: greenbono
     id: last_valid_u1
@@ -499,8 +538,8 @@ sensor:
     icon: mdi:transmission-tower
     accuracy_decimals: 0
     lambda: |-
-      return float(id(last_valid_i1).state * id(last_valid_u1).state * -1);
-    update_interval: 10s
+      return float(id(last_valid_i1).state * id(last_valid_u1).state);
+    update_interval: 30s
 
   # OutputPI — PI regulator output controlling SSR boiler PWM (0-255 raw → 0-300%)
   # 3 SSR relays in cascade: 255 = all 3 SSRs at full power = 300% rated boiler power
@@ -551,7 +590,7 @@ sensor:
     bitmask: 0xFF00
     skip_updates: $skip_updates_slow
 
-  # PI_StartLevel — minimum surplus on L1 (raw ADC digits) to start PI regulation
+  # PI_StartLevel — minimum surplus level to start PI regulation
   - platform: modbus_controller
     modbus_controller_id: greenbono
     name: ${friendly_name_gbo} PI Start Level
@@ -603,14 +642,8 @@ sensor:
         - 0 -> 0
         - 255 -> 200
 
-  # Dallas DS18B20 — pool temperature sensor
-  - platform: dallas_temp
-    name: ${friendly_name_gbo} Pool Temperature
-    address: 0x4e03159779154e28
-    device_class: temperature
-    state_class: measurement
-
 binary_sensor:
+  # K1/K2/K3 relay status (holding reg 10, bitmask)
   - platform: modbus_controller
     modbus_controller_id: greenbono
     id: k1
@@ -661,6 +694,8 @@ number:
     step: 1
     use_write_multiple: true
 
+  # SH2 timer — pump schedule start/stop hour (holding reg 56/58)
+  # Write also sends confirmation token 0x55AA to reg 76
   - platform: modbus_controller
     modbus_controller_id: greenbono
     id: sh2starttime1hh24
@@ -727,6 +762,7 @@ switch:
     register_type: holding
     icon: mdi:power
 
+  # Pool Pump always on — sets SH2 stop time to 20h (pump runs all day)
   - platform: template
     name: ${friendly_name_gbo} Pool Pump always on
     lambda: |-
@@ -751,56 +787,6 @@ switch:
           value: 0
 
 text_sensor:
-  - platform: modbus_controller
-    modbus_controller_id: greenbono
-    id: firmware_version
-    name: ${friendly_name_gbo} EEfwVersion
-    address: 34
-    raw_encode: HEXBYTES
-    register_type: holding
-    lambda: |-
-      char buffer[7];
-      uint16_t value = modbus_controller::word_from_hex_str(x, 0);
-      snprintf(buffer, sizeof(buffer), "%01d.%03d", value/1000, value % 1000);
-      return {buffer};
-    skip_updates: $skip_updates_slow
-
-  - platform: modbus_controller
-    modbus_controller_id: greenbono
-    name: ${friendly_name_gbo} SH2 start time 2 interval
-    address: 56
-    icon: mdi:clock-start
-    register_type: holding
-    lambda: |-
-      int minute = data[1];
-      int hour = data[0];
-      if (hour != 255) {
-        char buffer[8];
-        snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
-        return {buffer};
-      } else {
-        return {"OFF"};
-      }
-    skip_updates: $skip_updates_slow
-
-  - platform: modbus_controller
-    modbus_controller_id: greenbono
-    name: ${friendly_name_gbo} SH2 stop time 2 interval
-    address: 58
-    icon: mdi:clock-end
-    register_type: holding
-    lambda: |-
-      int minute = data[1];
-      int hour = data[0];
-      if (hour != 255) {
-        char buffer[8];
-        snprintf(buffer, sizeof(buffer), "%02d:%02d", hour, minute);
-        return {buffer};
-      } else {
-        return {"OFF"};
-      }
-    skip_updates: $skip_updates_slow
-
   # Growatt inverter status as text (input reg 0)
   - platform: modbus_controller
     modbus_controller_id: growatt
@@ -827,3 +813,29 @@ text_sensor:
         default: return {"Unknown"};
       }
     skip_updates: $skip_updates_slow
+
+button:
+  # GBO ExternControl — holding reg 14 (RAM, unlimited writes)
+  # 0x3F00 = regulate (normal SSR surplus control)
+  # 0x7F00 = turn everything off
+  - platform: template
+    name: ${friendly_name_gbo} Enable Regulation
+    icon: mdi:play-circle
+    on_press:
+      - lambda: |-
+          esphome::modbus_controller::ModbusController *gbo = id(greenbono);
+          ESP_LOGI("ExternCtrl", "GBO ExternControl → regulate (0x3F00)");
+          gbo->queue_command(
+            esphome::modbus_controller::ModbusCommandItem::create_write_multiple_command(
+              gbo, 14, 1, {uint16_t(0x3F00)}));
+
+  - platform: template
+    name: ${friendly_name_gbo} Disable Regulation
+    icon: mdi:stop-circle
+    on_press:
+      - lambda: |-
+          esphome::modbus_controller::ModbusController *gbo = id(greenbono);
+          ESP_LOGI("ExternCtrl", "GBO ExternControl → all off (0x7F00)");
+          gbo->queue_command(
+            esphome::modbus_controller::ModbusCommandItem::create_write_multiple_command(
+              gbo, 14, 1, {uint16_t(0x7F00)}));
